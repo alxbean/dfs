@@ -1,0 +1,47 @@
+ip=127.0.0.1
+port=4150
+timeout=30
+
+waitting=10
+
+trytimes = 3
+
+#run by daemon
+#value is true or false
+daemon=false
+stacksize=256KB
+
+#the operator must more than heartbeat in the storage
+heartbeat = 30
+
+network_module_thread_size = 8
+#notifier_module_thread_size = 8
+task_module_thread_size=8
+
+#the operator means the job context and task context size
+#job context size must equal task context size
+context_size=3
+
+basepath=/opt/ydb/tracker/
+
+logpath=/opt/ydb/tracker/log
+logprefix=ydb-tracker
+
+#unit KB MB GB
+logsize=10mb
+
+# Debug 
+# Info 
+# Warn 
+# Error 
+# Mark 
+loglevel=info
+
+#loop:loop the all storage
+#maxdisk:found the max free  disk
+#turn:all the storage in turn
+#master:specifies the storage by storage
+balance=loop
+
+#style as machineid
+master= m001

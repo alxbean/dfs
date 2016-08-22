@@ -1,0 +1,233 @@
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/content/!svn/ver/16434/codes/c/dev/ydb2_monitor/spx2/include
+END
+spx_module.hh
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_module.hh
+END
+spx_periodic.h
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_periodic.h
+END
+spx_network_module.h
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_network_module.h
+END
+spx_time.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_time.h
+END
+spx_stdf.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_stdf.h
+END
+spx_task.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_task.h
+END
+spx_skiplist.h
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_skiplist.h
+END
+spx_vector.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_vector.h
+END
+spx_web_server.h
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/content/!svn/ver/16434/codes/c/dev/ydb2_monitor/spx2/include/spx_web_server.h
+END
+spx_configurtion.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_configurtion.h
+END
+spx_socket_accept.h
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_socket_accept.h
+END
+spx_thread.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_thread.h
+END
+spx_job.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_job.h
+END
+spx_list.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_list.h
+END
+spx_atomic.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_atomic.h
+END
+spx_map.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_map.h
+END
+spx_defs.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_defs.h
+END
+spx_log.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_log.h
+END
+spx_rand.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_rand.h
+END
+spx_queue.h
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_queue.h
+END
+spx_nio.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_nio.h
+END
+spx_errno.h
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_errno.h
+END
+spx_module.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_module.h
+END
+spx_socket.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_socket.h
+END
+spx_alloc.h
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_alloc.h
+END
+spx_properties.h
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_properties.h
+END
+spx_path.h
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_path.h
+END
+spx_limits.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_limits.h
+END
+spx_threadpool.h
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_threadpool.h
+END
+spx_types.h
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_types.h
+END
+spx_string.h
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_string.h
+END
+spx_task_module.h
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_task_module.h
+END
+spx_io.h
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_io.h
+END
+spx_fixed_vector.h
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_fixed_vector.h
+END
+spx_notifier_module.h
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_notifier_module.h
+END
+spx_message.h
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_message.h
+END
+spx_env.h
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_env.h
+END
+spx_collection.h
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/content/!svn/ver/11146/codes/c/dev/ydb2_monitor/spx2/include/spx_collection.h
+END
