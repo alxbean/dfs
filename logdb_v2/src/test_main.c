@@ -147,11 +147,6 @@ int main(int argc, char **argv){/*{{{*/
         exit(err);
     }
 
-    if ( (err = spx_block_skp_ctx_pool_new(FrzCtxPoolSize)) != 0){
-        SpxLog2(log, SpxLogError, err, "spx_skp_serial_ctx_pool_new failed.");
-        exit(err);
-    }
-
     pthread_t tid = spx_block_skp_thread_new(log, &err);
     if (err != 0){
         SpxLog2(log, SpxLogError, err, "spx_skp_serial_block_skp_thread_new failed");

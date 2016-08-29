@@ -1314,27 +1314,37 @@ static int spx_block_skp_serial_value_node_query(char *path, ubyte_t *header, in
     return 0;
 }/*}}}*/
 
-struct spx_skp_query_result *spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index){/*{{{*/
+int spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index, struct spx_skp_query_result *result){/*{{{*/
     if (NULL == block_skp){
         printf("block_skp is NULL in spx_block_skp_serial_node_query\n");
-        return NULL;
+        return -1;
+    }
+
+    if (NULL == key){
+        printf("key is NULL in spx_block_skp_serial_node_query\n");
+        return -1;
+    }
+
+    if (NULL == result){
+        printf("result is NULL in spx_block_skp_serial_node_query\n");
+        return -1;
     }
 
     if (false == spx_skp_serial_is_index_available(index)){
         printf("spx_block_skp_node_serial index is out of range\n");
-        return NULL;
+        return -1;
     }
 
     SpxSkpB2ODelegate byte2key = spx_skp_serial_get_b2o(block_skp->key_type);
     if (NULL == byte2key){
         printf("type %d is not supported\n", block_skp->key_type);
-        return NULL;
+        return -1;
     }
 
     SpxSkpB2ODelegate byte2value = spx_skp_serial_get_b2o(block_skp->value_type);
     if (NULL == byte2value){
         printf("type %d is not supported\n", block_skp->value_type);
-        return NULL;
+        return -1;
     }
 
     char path[SpxSkpSerialPathLen];
@@ -1342,14 +1352,14 @@ struct spx_skp_query_result *spx_block_skp_serial_node_query(struct spx_block_sk
     ubyte_t *header = spx_skp_serial_get_header(block_skp->name, path);
     if (NULL == header){
         printf("header is NULL\n");
-        return NULL;
+        return -1;
     }
 
     ubyte_t *item_ptr = spx_skp_serial_get_item(header, index);
     spx_skp_serial_index_type index_type = *item_ptr;
     if (index_type != INDEX){
         printf("the index:%ld item is not a INDEX type\n", index);
-        return NULL;
+        return -1;
     }
 
     int index_len = spx_msg_b2i(item_ptr + 1);
@@ -1357,7 +1367,6 @@ struct spx_skp_query_result *spx_block_skp_serial_node_query(struct spx_block_sk
     struct spx_skp_serial_map_stat *block_mst = spx_skp_serial_map(path, SpxSkpSerialBlockSize, index_offset);  
     int off = 0;
     int flag = spx_block_skp_node_key_detect(block_mst->mapped, index_len, &off, block_skp->cmp_key, key, byte2key, block_skp->free_key);
-    struct spx_skp_query_result *result = spx_skp_query_result_new();
     if (flag ==0){
         ubyte_t * key_ptr = block_mst->mapped + off;
         int key_len = spx_msg_b2i(key_ptr);
@@ -1371,6 +1380,6 @@ struct spx_skp_query_result *spx_block_skp_serial_node_query(struct spx_block_sk
     }
 
     spx_skp_serial_un_map(block_mst);
-    return result;
+    return 0;
 }/*}}}*/
 

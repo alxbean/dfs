@@ -78,7 +78,7 @@ extern "C" {
 
     struct spx_skp_list_node{
         struct spx_skp *skp;
-        struct spx_skp_list_node  *next_skp;
+        struct spx_skp_list_node *next_skp;
     };
 
     struct spx_skp_list{
@@ -92,22 +92,23 @@ extern "C" {
         struct spx_skp_idx *next_idx;
     } g_spx_skp_idx_head;//read index.config 
 
-    //-------------Interface-------------------------------
+    //-------------interface-------------------------------
     void spx_skp_default_free(void * pfree);
     int spx_skp_level_rand();
 
     //query
-    struct spx_skp_query_result *spx_skp_query(struct spx_skp *skp, void *key);
-    struct spx_skp_query_result *spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key);
-    struct spx_skp_query_result *spx_skp_bigger_near_query(struct spx_skp *skp, void *key);
-    struct spx_skp_query_result *spx_skp_bigger_query(struct spx_skp *skp, void *key);
-    struct spx_skp_query_result *spx_skp_smaller_near_query(struct spx_skp *skp, void *key);
-    struct spx_skp_query_result *spx_skp_smaller_query(struct spx_skp *skp, void *key);
+    int spx_skp_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
+    int spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key, struct spx_skp_query_result *result);
+    int spx_skp_bigger_near_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
+    int spx_skp_bigger_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
+    int spx_skp_smaller_near_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
+    int spx_skp_smaller_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
 
     //query result
     struct spx_skp_query_result *spx_skp_query_result_new();
     int spx_skp_query_result_destory(struct spx_skp_query_result *result);
     int spx_skp_query_result_insert(struct spx_skp_query_result *result, void *value);
+
     //void spx_skp_print(struct spx_skp *sl);
     struct spx_skp_node *spx_skp_find(struct spx_skp *sl, void *key);
     int spx_skp_delete(struct spx_skp *sl, void *key);

@@ -344,10 +344,8 @@ int spx_skp_delete(struct spx_skp *skp, void *key)/*{{{*/
 }/*}}}*/
 
 /*
-* spx_skp query operation
-*/
-
-// query result struction
+ * query result struction
+ */
 struct spx_skp_query_result *spx_skp_query_result_new(){/*{{{*/
     struct spx_skp_query_result * result = (struct spx_skp_query_result *) malloc(sizeof(struct spx_skp_query_result));
     if (NULL == result){
@@ -403,15 +401,27 @@ int spx_skp_query_result_destory(struct spx_skp_query_result *result){/*{{{*/
     return 0;
 }/*}}}*/
 
-
+/*
+* spx_skp query method 
+*/
 //find the node by the key
-struct spx_skp_query_result *spx_skp_query(struct spx_skp *skp, void *key){/*{{{*/
+int spx_skp_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result){/*{{{*/
+    if (NULL == skp){
+        printf("skp is NULL int spx_skp_query\n");
+        return -1;
+    }
+
     if (NULL == key){
         printf("key is NULL\n");
-        return NULL;
+        return -1;
     }
+
+    if (NULL == result){
+        printf("result is NULL in spx_skp_query\n");
+        return -1;
+    }
+
     struct spx_skp_node *cur_node = NULL, *pre_node =  skp->head;
-    struct spx_skp_query_result * result = spx_skp_query_result_new();
     int rc = -1;
 
     int i;
@@ -429,19 +439,27 @@ struct spx_skp_query_result *spx_skp_query(struct spx_skp *skp, void *key){/*{{{
         }
     }
 
-    return result;
+    return 0;
 }/*}}}*/
 
 //find the Nodes by the range key from struct spx_skp
-struct spx_skp_query_result *spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key){/*{{{*/
+int spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key, struct spx_skp_query_result *result){/*{{{*/
+    if (NULL == skp){
+        printf("skp is NULL int spx_skp_range_query\n");
+        return -1;
+    }
+
     if (NULL == start_key || NULL == end_key){
         printf("start_key or end_key is NULL\n");
-        return NULL;
+        return -1;
+    }
+
+    if (NULL == result){
+        printf("result is NULL in spx_skp_range_query\n");
+        return -1;
     }
 
     struct spx_skp_node *cur_node = skp->head; 
-    struct spx_skp_query_result *result = spx_skp_query_result_new();
-
     while( (cur_node = cur_node->next_node[0]) && (cur_node->key != NULL) && (skp->cmp_key(start_key, cur_node->key) > 0))
     ;//empty body
 
@@ -454,19 +472,27 @@ struct spx_skp_query_result *spx_skp_range_query(struct spx_skp *skp, void *star
         cur_node = cur_node->next_node[0];
     }
 
-    return result;
+    return 0;
 }/*}}}*/
 
 //find the bigger Node of the key
-struct spx_skp_query_result *spx_skp_bigger_near_query(struct spx_skp *skp, void *key){/*{{{*/
+int spx_skp_bigger_near_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result){/*{{{*/
+    if (NULL == skp){
+        printf("skp is NULL int spx_skp_bigger_near_query\n");
+        return -1;
+    }
+
     if (NULL == key){
         printf("key is NULL\n");
-        return NULL;
+        return -1;
+    }
+
+    if (NULL == result){
+        printf("result is NULL in spx_skp_bigger_near_query\n");
+        return -1;
     }
 
     struct spx_skp_node *cur_node = skp->head->next_node[0];
-    struct spx_skp_query_result *result = spx_skp_query_result_new();
-
     while (cur_node){
         if ( (cur_node->key != NULL) && skp->cmp_key(key, cur_node->key) <= 0 && cur_node->size != 0){
             struct spx_skp_node_value *tmp_nv = cur_node->value; 
@@ -480,14 +506,27 @@ struct spx_skp_query_result *spx_skp_bigger_near_query(struct spx_skp *skp, void
         cur_node = cur_node->next_node[0];
     }
 
-    return result;
+    return 0;
 }/*}}}*/
 
 //find the bigger Nodes of the key
-struct spx_skp_query_result *spx_skp_bigger_query(struct spx_skp *skp, void *key){/*{{{*/
-    struct spx_skp_node *cur_node = skp->head->next_node[0];
-    struct spx_skp_query_result *result = spx_skp_query_result_new();
+int spx_skp_bigger_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result){/*{{{*/
+    if (NULL == skp){
+        printf("skp is NULL int spx_skp_bigger_query\n");
+        return -1;
+    }
 
+    if (NULL == key){
+        printf("key is NULL in spx_skp_bigger_query\n");
+        return -1;
+    }
+
+    if (NULL == result){
+        printf("result is NULL in spx_skp_bigger_query\n");
+        return -1;
+    }
+
+    struct spx_skp_node *cur_node = skp->head->next_node[0];
     while (cur_node){
         if ((cur_node->key !=NULL) && skp->cmp_key(key, cur_node->key) <= 0 && cur_node->size != 0){//if p->size = 0, it has been deleted
             struct spx_skp_node_value * tmp_nv = cur_node->value; 
@@ -499,18 +538,27 @@ struct spx_skp_query_result *spx_skp_bigger_query(struct spx_skp *skp, void *key
         cur_node = cur_node->next_node[0];
     }
 
-    return result;
+    return 0;
 }/*}}}*/
 
 //find the smaller Node of the key
-struct spx_skp_query_result *spx_skp_smaller_near_query(struct spx_skp *skp, void *key){/*{{{*/
+int spx_skp_smaller_near_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result){/*{{{*/
+    if (NULL == skp){
+        printf("skp is NULL int spx_skp_bigger_query\n");
+        return -1;
+    }
+
     if (NULL == key){
         printf("key is NULL\n");
         return NULL;
     }
 
+    if (NULL == result){
+        printf("result is NULL in spx_skp_smaller_near_query\n");
+        return -1;
+    }
+
     struct spx_skp_node *next_node = NULL, *cur_node = skp->head->next_node[0]; 
-    struct spx_skp_query_result *result = spx_skp_query_result_new();
 
     while (cur_node){
         next_node = cur_node->next_node[0];
@@ -526,19 +574,28 @@ struct spx_skp_query_result *spx_skp_smaller_near_query(struct spx_skp *skp, voi
         cur_node = next_node;
     }
 
-    return result;
+    return 0;
 }/*}}}*/
 
 //find the smaller Nodes of the key
-struct spx_skp_query_result *spx_skp_smaller_query(struct spx_skp *skp, void *key)/*{{{*/
+int spx_skp_smaller_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result)/*{{{*/
 {
+    if (NULL == skp){
+        printf("skp is NULL int spx_skp_smaller_query\n");
+        return -1;
+    }
+
     if (NULL == key){
         printf("key is NULL\n");
         return NULL;
     }
 
+    if (NULL == result){
+        printf("result is NULL in spx_skp_smaller_query\n");
+        return -1;
+    }
+
     struct spx_skp_node *cur_node = skp->head->next_node[0]; 
-    struct spx_skp_query_result * result = spx_skp_query_result_new();
     while(cur_node){
         if( (cur_node->key != NULL) && (skp->cmp_key(key, cur_node->key) >= 0)){
             struct spx_skp_node_value * tmp_nv = cur_node->value; 
@@ -553,7 +610,7 @@ struct spx_skp_query_result *spx_skp_smaller_query(struct spx_skp *skp, void *ke
         cur_node = cur_node->next_node[0];
     }
 
-    return result;
+    return 0;
 }/*}}}*/
 
 /*

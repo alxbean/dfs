@@ -127,6 +127,16 @@ static char msgpk_tree_parse_key(char * obj_key, char *key){/*{{{*/
        return -1;
    }
 }/*}}}*/
+static int msgpk_tree_level_equal_query(struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
+
+}
+
+static int msgpk_tree_level_smaller_query(struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
+
+}
+static int msgpk_tree_level_biger_query(struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
+
+}
 
 static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *parent_skp){//finally, the root_skp contains the query result/*{{{*/
     if (NULL == obj){
@@ -204,11 +214,11 @@ static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *pare
             return;
         }
 
-        struct spx_skp *skp = spx_skp_list_get(index_name, &err);
+        struct spx_skp *skp = spx_skp_list_get(&g_spx_skp_list, index_name, &err);
         struct spx_block_skp *block_skp = spx_block_skp_list_get(index_name, key_type, cmp_key, value_type, cmp_value, NULL);
 
         if (block_skp != NULL){
-            struct spx_skp_query_result *res = NULL;
+            struct spx_skp_query_result *res = spx_skp_query_result_new();
             switch(op){
                 case 0:
                     res = spx_block_skp_query(block_skp, cond);
@@ -221,7 +231,6 @@ static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *pare
                     break;
                 default:
                     printf("op is error\n");
-                    res = NULL;
                     return;
             }
 
@@ -309,7 +318,7 @@ char * msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request)
         }
 
         printf("spx_skp_list_get\n");
-        struct spx_skp *skp = spx_skp_list_get(index_name, &err);
+        struct spx_skp *skp = spx_skp_list_get(&g_spx_skp_list, index_name, &err);
 
         if(NULL == skp){
             skp = spx_skp_new(key_type, cmp_key, value_type, cmp_value, index_name, NULL, msgpk_tree_metadata_free);
@@ -318,7 +327,7 @@ char * msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request)
                 return NULL;
             }
 
-            spx_skp_list_add(skp);
+            spx_skp_list_add(&g_spx_skp_list, skp);
         }
 
 

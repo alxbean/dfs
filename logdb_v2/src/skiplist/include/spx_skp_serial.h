@@ -79,7 +79,7 @@ extern "C" {
     ubyte_t * spx_skp_serial_data_reader(struct spx_skp_serial_metadata *md);
     void spx_skp_serial_md_free(struct spx_skp_serial_metadata *md);
     struct spx_skp_serial_metadata *spx_skp_serial_md_copy(struct spx_skp_serial_metadata * src_md);
-    struct spx_skp_query_result *spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index);
+    int spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index, struct spx_skp_query_result *result);
 
     //byte operation
     //int
