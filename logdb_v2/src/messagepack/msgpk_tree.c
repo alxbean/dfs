@@ -12,13 +12,14 @@
 #define MsgpkTreeUnidSize 100
 
 //declare
-static void msgpk_tree_feed_query_result(struct spx_skp *skp, struct spx_skp_query_result *vl);
-static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, struct spx_skp_serial_metadata_list *md_lst);
+static void msgpk_tree_feed_query_result(struct spx_skp *skp, int *uni_count, struct spx_skp_query_result *res);
+static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, int *uni_count, struct spx_skp_serial_metadata_list *md_lst);
 static struct spx_skp_serial_metadata_list *msgpk_tree_merge_intersection(struct spx_skp *skp);
 static struct spx_skp_serial_metadata_list *msgpk_tree_merge_union(struct spx_skp *skp);
 static char msgpk_tree_parse_key(char * obj_key, char *key);
-static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *parent_skp);
+static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *parent_skp, int *uni_count);
 static void msgpk_tree_metadata_free(void *mdp);
+static int msgpk_tree_level_equal_query(void *query_key, struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result);
 
 static void msgpk_tree_metadata_free(void *mdp){/*{{{*/
     struct spx_skp_serial_metadata * md = (struct spx_skp_serial_metadata *) mdp;
@@ -28,28 +29,30 @@ static void msgpk_tree_metadata_free(void *mdp){/*{{{*/
 /*
  * query method
  */
-static void msgpk_tree_feed_query_result(struct spx_skp *skp, struct spx_skp_query_result *res){/*{{{*/
+static void msgpk_tree_feed_query_result(struct spx_skp *skp, int *uni_count, struct spx_skp_query_result *res){/*{{{*/
     if (NULL == res){
         printf("result is NULLin msgpk_tree_feed_query_result\n");
         return;
     }
 
-    int count = 0;
     struct spx_skp_query_result_node *tmp_result_node = res->head;
     
     while (tmp_result_node){
         void *value = tmp_result_node->value;
         if (NULL != value) {
-            spx_skp_insert(skp, value, &count);
-            count++;
+            int *count = (int *) malloc(sizeof(int));
+            *count = *uni_count;
+            spx_skp_insert(skp, value, count);
+            (*uni_count)++;//unique insert to make sure size of skp node will increase of the same key 
         } else {
             printf("value is NULL");
         }
         tmp_result_node = tmp_result_node->next_result_node;
     }
+
 }/*}}}*/
 
-static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, struct spx_skp_serial_metadata_list *md_lst){/*{{{*/
+static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, int *uni_count, struct spx_skp_serial_metadata_list *md_lst){/*{{{*/
     if (NULL == md_lst){
         printf("mdl is NULL\n");
         return;
@@ -58,12 +61,14 @@ static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, struct spx_skp_se
         printf("md_lst->head is NULL\n");
         return;
     }
-    int count = 0;
+
     struct spx_skp_serial_metadata_list_node *tmp_md = md_lst->head;
     while (tmp_md){
         if(NULL != tmp_md){
-            spx_skp_insert(skp, tmp_md->md, &count);
-            count++;//keep value is unique, then value size can increase
+            int *count = (int *) malloc(sizeof(int));
+            *count = *uni_count;
+            spx_skp_insert(skp, tmp_md->md, count);
+            (*uni_count)++;//keep value is unique, then value size can increase
         } else {
             printf("tmp_md is NULL");
         }
@@ -127,18 +132,52 @@ static char msgpk_tree_parse_key(char * obj_key, char *key){/*{{{*/
        return -1;
    }
 }/*}}}*/
-static int msgpk_tree_level_equal_query(struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
 
+static int msgpk_tree_level_equal_query(void *query_key, struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){/*{{{*/
+    if (NULL == query_key){
+        printf("query_key is NULL in msgpk_tree_level_equal_query\n");
+        return -1;
+    }
+
+    if (NULL == skp){
+        printf("skp is NULL in msgpk_tree_level_equal_query\n");
+    } else {
+        //query in insert_skp
+        spx_skp_query(skp, query_key, result);
+    }
+
+
+    //query in freezen_skp
+    struct spx_skp_list *freezen_skp_list = spx_skp_queue_visit(&g_spx_skp_queue);
+    struct spx_skp_list_node *freezen_skp_node = freezen_skp_list->head;
+
+    while (freezen_skp_node != NULL){
+        struct spx_skp *freezen_skp = freezen_skp_node->skp;
+        spx_skp_query(freezen_skp, query_key, result);
+        freezen_skp_node = freezen_skp_node->next_skp;
+    }
+
+    spx_skp_list_destory(&freezen_skp_list);
+    
+    //query in block_skp
+    if (NULL == block_skp){
+        printf("block_skp is NULL in msgpk_tree_level_equal_query\n");
+    } else {
+        spx_block_skp_query(block_skp, query_key, result);
+    }
+
+    return 0;
+}/*}}}*/
+
+static int msgpk_tree_level_smaller_query(void *query_key, struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
+    return 0;
 }
 
-static int msgpk_tree_level_smaller_query(struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
-
-}
-static int msgpk_tree_level_biger_query(struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
-
+static int msgpk_tree_level_biger_query(void *query_key, struct spx_skp *skp, struct spx_block_skp *block_skp, struct spx_skp_query_result *result){
+    return 0;
 }
 
-static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *parent_skp){//finally, the root_skp contains the query result/*{{{*/
+static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *parent_skp, int *uni_count){//finally, the root_skp contains the query result/*{{{*/
     if (NULL == obj){
         printf("obj is NULL in msgpk_tree_query\n");
         return;
@@ -154,8 +193,10 @@ static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *pare
 
         //if obj->child != NULL, obj_type = OBJ_TYPE_MAP
         if (NULL != obj->child){
-                msgpk_tree_query_exec(obj->child, tmp_skp);
+                int tmp_uni_count = 0;
+                msgpk_tree_query_exec(obj->child, tmp_skp, &tmp_uni_count);
         }
+
 
         if(*ov_key.str_val == '&'){
            tmp_md_lst = msgpk_tree_merge_intersection(tmp_skp); 
@@ -167,42 +208,42 @@ static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *pare
             return;
         }
         
-        msgpk_tree_feed_metadata_list(parent_skp, tmp_md_lst);
+        msgpk_tree_feed_metadata_list(parent_skp, uni_count, tmp_md_lst);
     } else {
         SpxSkpCmpDelegate cmp_key;
         SpxSkpCmpDelegate cmp_value = cmp_md;
         spx_skp_type key_type = SKP_TYPE_STR;
         spx_skp_type value_type = SKP_TYPE_MD;
 
-        void *cond;
+        void *query_key;
         switch(obj->obj_type){
             case OBJ_TYPE_STR://string
                 cmp_key = cmp_str;
                 key_type = SKP_TYPE_STR;
-                cond = ov_value.str_val;
+                query_key = ov_value.str_val;
                 break;
             case OBJ_TYPE_POSITIVE_INT:
             case OBJ_TYPE_NEGATIVE_INT:
             case OBJ_TYPE_INT32://int
                 cmp_key = cmp_int;
                 key_type = SKP_TYPE_INT;
-                cond = &ov_value.int32_val;
+                query_key = &ov_value.int32_val;
                 break;
             case OBJ_TYPE_INT64://long
                 cmp_key = cmp_long;
                 key_type = SKP_TYPE_LONG;
-                cond = &ov_value.int64_val;
+                query_key = &ov_value.int64_val;
                 break;
             case OBJ_TYPE_FLOAT:
                 cmp_key = cmp_float;
                 key_type = SKP_TYPE_FLOAT;
-                cond = &ov_value.float_val;
+                query_key = &ov_value.float_val;
             case OBJ_TYPE_DOUBLE:
                 cmp_key = cmp_double;
                 key_type = SKP_TYPE_DOUBLE;
-                cond = &ov_value.double_val;
+                query_key = &ov_value.double_val;
             default:
-                cond = NULL;
+                query_key = NULL;
                 printf("object_value type is not supported for msgpk_tree_query yet\n");
                 return;
         }
@@ -215,34 +256,32 @@ static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *pare
         }
 
         struct spx_skp *skp = spx_skp_list_get(&g_spx_skp_list, index_name, &err);
-        struct spx_block_skp *block_skp = spx_block_skp_list_get(index_name, key_type, cmp_key, value_type, cmp_value, NULL);
+        struct spx_block_skp *block_skp = spx_block_skp_list_get(index_name, key_type, cmp_key, value_type, cmp_value, NULL);//unserial in it
 
-        if (block_skp != NULL){
-            struct spx_skp_query_result *res = spx_skp_query_result_new();
-            switch(op){
-                case 0:
-                    res = spx_block_skp_query(block_skp, cond);
-                    break;
-                case 1:
-                    res = spx_skp_smaller_query(skp, cond);
-                    break;
-                case 2:
-                    res = spx_skp_bigger_query(skp, cond);
-                    break;
-                default:
-                    printf("op is error\n");
-                    return;
-            }
+        struct spx_skp_query_result *res = spx_skp_query_result_new();
+        switch(op){
+            case 0:
+                msgpk_tree_level_equal_query(query_key, skp, block_skp, res);
+                break;
+            case 1:
+                spx_skp_smaller_query(skp, query_key, res);
+                break;
+            case 2:
+                spx_skp_bigger_query(skp, query_key, res);
+                break;
+            default:
+                printf("op is error\n");
+                return;
+        }
 
-            if(NULL != res){
-               msgpk_tree_feed_query_result(parent_skp, res); 
-               spx_skp_query_result_destory(res);
-            }
+        if(NULL != res){
+            msgpk_tree_feed_query_result(parent_skp, uni_count, res); 
+            spx_skp_query_result_destory(res);
         }
     }
 
     if(NULL != obj->next){
-        msgpk_tree_query_exec(obj->next, parent_skp);
+        msgpk_tree_query_exec(obj->next, parent_skp, uni_count);
     }
 }/*}}}*/
 
@@ -251,8 +290,9 @@ struct spx_skp_serial_metadata_list *msgpk_tree_query(struct msgpk_object * obj)
         printf("obj->child is NULL\n");
         return NULL;
     }
+    int uni_count = 0;
     struct spx_skp *root_skp = spx_skp_new_tmp(cmp_md, cmp_int, "root_skp", NULL, NULL); 
-    msgpk_tree_query_exec(obj->child, root_skp);
+    msgpk_tree_query_exec(obj->child, root_skp, &uni_count);
     return msgpk_tree_merge_union(root_skp); 
 }/*}}}*/
 
@@ -318,7 +358,7 @@ char * msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request)
         }
 
         printf("spx_skp_list_get\n");
-        struct spx_skp *skp = spx_skp_list_get(&g_spx_skp_list, index_name, &err);
+        struct spx_skp *skp = spx_skp_list_get_push_queue(&g_spx_skp_list, index_name, &err);
 
         if(NULL == skp){
             skp = spx_skp_new(key_type, cmp_key, value_type, cmp_value, index_name, NULL, msgpk_tree_metadata_free);

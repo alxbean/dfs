@@ -68,6 +68,7 @@ extern "C" {
     //spx_block_skp_serial
     int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index);
     int spx_block_skp_unserial(struct spx_block_skp *block_skp);
+    int spx_block_skp_node_key_print(struct spx_block_skp *block_skp);
 
     //spx_skp_list operation
     struct spx_skp * spx_skp_list_serial_add(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cmp_value, SpxSkpB2ODelegate byte2key, SpxSkpB2ODelegate byte2value, const char * sl_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value);

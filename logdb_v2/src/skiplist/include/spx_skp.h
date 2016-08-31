@@ -62,7 +62,8 @@ extern "C" {
         SpxSkpCmpDelegate cmp_value;
         SpxSkpFreeDelegate free_key;
         SpxSkpFreeDelegate free_value;
-        bool_t is_free_kv;
+        bool_t is_free_key;
+        bool_t is_free_value;
     };
 
     //for saving query result set 

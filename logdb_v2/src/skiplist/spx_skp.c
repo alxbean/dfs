@@ -109,12 +109,12 @@ static int spx_skp_node_free(struct spx_skp *skp, struct spx_skp_node *node)/*{{
     while(vp){
         struct spx_skp_node_value * fvp = vp;
         vp = fvp->next_value;
-        if (skp->is_free_kv == true && fvp->value != NULL)
+        if (skp->is_free_value == true && fvp->value != NULL)
             skp->free_value(fvp->value);//do not free value pointer, if it is needed, a free_method should be recall
         free(fvp);// free spx_skp_node_value
     }
 
-    if (skp->is_free_kv == true && node->key != NULL)
+    if (skp->is_free_key == true && node->key != NULL)
         skp->free_key(node->key);//do not free key pointer, if it is need, a free_method should be recall
 
     free(node);// free skp_node
@@ -161,7 +161,8 @@ struct spx_skp * spx_skp_new_tmp(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cm
     skp->level = 0; 
     skp->cmp_key = cmp_key;
     skp->cmp_value = cmp_value;
-    skp->is_free_kv = false;
+    skp->is_free_key = false;
+    skp->is_free_value = true;
     if (NULL == free_key){
         skp->free_key = spx_skp_default_free;
     } else {
@@ -210,7 +211,8 @@ struct spx_skp * spx_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, s
     skp->key_type = key_type;
     skp->cmp_value = cmp_value;
     skp->value_type = value_type;
-    skp->is_free_kv = true;
+    skp->is_free_key = true;
+    skp->is_free_value = true;
 
     if (NULL == free_key){
         skp->free_key = spx_skp_default_free;
@@ -287,7 +289,8 @@ struct spx_skp_node * spx_skp_insert(struct spx_skp * skp, void * key, void * va
 
     //exist node 
     if ((cur_node != NULL) && (cur_node->key != NULL) && !skp->cmp_key(key, cur_node->key)){
-        skp->free_key(key);
+        if (true == skp->is_free_key)
+            skp->free_key(key);//note:memory leak bug without it!!!
         if(spx_skp_value_insert(skp, cur_node, value) == 1)//value exist
             return NULL;
         skp->length++;//value count as a length node
@@ -384,6 +387,10 @@ int spx_skp_query_result_insert(struct spx_skp_query_result *result, void *value
     return 0;
 }/*}}}*/
 
+int spx_skp_query_result_filter(struct spx_skp_query_result *result){
+    return 0;
+}
+
 int spx_skp_query_result_destory(struct spx_skp_query_result *result){/*{{{*/
     if (NULL == result){
         printf("result is NULL to free in spx_skp_query_result\n");
@@ -426,7 +433,7 @@ int spx_skp_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *r
 
     int i;
     for(i = skp->level; i>=0; i--){
-        while ( (cur_node = pre_node->next_node[i]) && (cur_node->key != NULL) && ( (rc = skp->cmp_key(key , cur_node->key)) > 0))
+        while (pre_node != NULL && (cur_node = pre_node->next_node[i]) && (cur_node->key != NULL) && ( (rc = skp->cmp_key(key , cur_node->key)) > 0))
             pre_node = cur_node; 
         if ( !rc && (cur_node->size != 0))
         {   // if q->size = 0, this node is DELETED
@@ -550,7 +557,7 @@ int spx_skp_smaller_near_query(struct spx_skp *skp, void *key, struct spx_skp_qu
 
     if (NULL == key){
         printf("key is NULL\n");
-        return NULL;
+        return -1;
     }
 
     if (NULL == result){
@@ -587,7 +594,7 @@ int spx_skp_smaller_query(struct spx_skp *skp, void *key, struct spx_skp_query_r
 
     if (NULL == key){
         printf("key is NULL\n");
-        return NULL;
+        return -1;
     }
 
     if (NULL == result){

@@ -63,10 +63,12 @@ extern "C" {
 
     //spx_skp_list method 
     struct spx_skp_idx *spx_skp_read_config();
+    struct spx_skp * spx_skp_list_get_push_queue(struct spx_skp_list *skp_list, char *skp_name, err_t *err);
     struct spx_skp * spx_skp_list_get(struct spx_skp_list *skp_list, char *skp_name, err_t *err);
     struct spx_block_skp * spx_block_skp_list_get(char *block_skp_name, spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, SpxSkpFreeDelegate free_key);
     struct spx_skp_list_node *spx_skp_list_add(struct spx_skp_list *skp_list, struct spx_skp *skp);
     int spx_skp_list_delete(struct spx_skp_list *skp_list, char *skp_name);
+    struct spx_skp_list *spx_skp_list_new();
     int spx_skp_list_destory(struct spx_skp_list **skp_list_ptr);
     
     //spx_block_skp method

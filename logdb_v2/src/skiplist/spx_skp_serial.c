@@ -47,7 +47,7 @@ static ubyte_t *spx_skp_serial_get_item(ubyte_t *header, int64_t index);
 static struct spx_skp_serial_map_stat *spx_skp_serial_map(const char * file, int64_t size, int64_t offset);
 static int spx_skp_serial_un_map(struct spx_skp_serial_map_stat * mst);
 static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, const ubyte_t *data, size_t len);
-static char *spx_skp_serial_which_file();
+static int spx_skp_serial_which_file(char *file);
 static ubyte_t *spx_skp_serial_m2b(struct spx_skp_serial_metadata *md, int *byteLen);
 static struct spx_skp_serial_metadata *spx_skp_serial_b2m(ubyte_t *b);
 static char *gen_local_time();
@@ -400,6 +400,7 @@ static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, con
     printf("open file: %s\n", path1);
     FILE *fp = fopen(path1, "a+"); 
     if (NULL == fp){
+        printf("opening file:%s\n", path1);
         perror("fp is NULL");
         return NULL;
     }
@@ -422,15 +423,14 @@ static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, con
     return md;
 }/*}}}*/
 
-static char * spx_skp_serial_which_file(){/*{{{*/
-    char *file = (char*)calloc(1, sizeof(char) * SpxSkpSerialFileNameSize);// yyyy/mm/dd\n
+static int spx_skp_serial_which_file(char *file){/*{{{*/
     char path[SpxSkpSerialFileNameSize];
     char path1[SpxSkpSerialFileNameSize];
     char path2[SpxSkpSerialFileNameSize];
     char time_path[SpxSkpSerialFileNameSize];
     getcwd(path, sizeof(path));
     if (-1 == spx_skp_serial_build_time_dir(time_path))
-        return NULL;
+        return -1;
     snprintf(path1, sizeof(path1), "%s/skiplist/data/%s", path, time_path);
     snprintf(path2, sizeof(path2), "%s/%04d.log", path1, g_file_count);
 
@@ -439,7 +439,7 @@ static char * spx_skp_serial_which_file(){/*{{{*/
 
     if (g_file_count >= SpxSkpMaxLogCount){
         printf("file_count is full\n");
-        return NULL;
+        return -1;
     }
 
     snprintf(file, SpxSkpSerialFileNameSize, "%s/%04d.log", time_path, g_file_count);
@@ -449,7 +449,7 @@ static char * spx_skp_serial_which_file(){/*{{{*/
     //} 
     //                                      
     //cur_file = file;//wild pointer
-    return file;
+    return 0;
 }/*}}}*/
 
 static ubyte_t * spx_skp_serial_m2b(struct spx_skp_serial_metadata *md, int *byteLen){/*{{{*/
@@ -485,9 +485,12 @@ static struct spx_skp_serial_metadata *spx_skp_serial_b2m(ubyte_t *b){/*{{{*/
 }/*}}}*/
 
 ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len){/*{{{*/
-    char * file = spx_skp_serial_which_file();     
+    char file[SpxSkpSerialFileNameSize] = {0};// yyyy/mm/dd\n
+    if (spx_skp_serial_which_file(file) != 0){
+        printf("locate file to write failed\n");
+        return NULL;
+    }
     struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(file, data, len);
-    free(file);
     if(NULL == md){
         printf("write data error\n");
         return NULL;
@@ -499,10 +502,13 @@ ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len){/*{{{
 }/*}}}*/
 
 struct spx_skp_serial_metadata* spx_skp_serial_data_writer2md(const ubyte_t *data, size_t len){/*{{{*/
+    char file[SpxSkpSerialFileNameSize] = {0};// yyyy/mm/dd\n
+    if (spx_skp_serial_which_file(file) != 0){
+        printf("locate file to write failed\n");
+        return NULL;
+    }
 
-    char * file = spx_skp_serial_which_file();     
     struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(file, data, len);
-    free(file);
     if(NULL == md){
         printf("write data error\n");
         return NULL;
@@ -551,6 +557,7 @@ ubyte_t * spx_skp_serial_data_reader(struct spx_skp_serial_metadata *md){/*{{{*/
 
     FILE *fp = fopen(file, "r+");
     if (NULL == fp){
+        printf("opening file :%s\n", file);
         perror("fp is NULL");
         return NULL;
     }
@@ -780,6 +787,67 @@ static SpxSkpB2ODelegate spx_skp_serial_get_b2o(spx_skp_type type){/*{{{*/
 /*
  * spx_block_skp_serial
  */
+
+int spx_block_skp_node_key_print(struct spx_block_skp *block_skp){/*{{{*/
+    if (NULL == block_skp){
+        printf("spx_block_skp_node_key_detect block is NULL\n");
+        return -1;
+    }
+
+    SpxSkpB2ODelegate byte2key = spx_skp_serial_get_b2o(block_skp->key_type);
+    if (NULL == byte2key){
+        printf("type %d is not supported\n", block_skp->key_type);
+        return -1;
+    }
+
+    SpxSkpFreeDelegate free_key = block_skp->free_key;
+
+    char path[SpxSkpSerialPathLen];
+    spx_skp_get_idx_path(block_skp->name, path, sizeof(path));
+    ubyte_t *header = spx_skp_serial_get_header(block_skp->name, path);
+    if (NULL == header){
+        printf("header is NULL\n");
+        return -1;
+    }
+
+    struct spx_block_skp_node *node = block_skp->head;
+
+    while (node != NULL){
+        int64_t index = node->index;
+        if (false == spx_skp_serial_is_index_available(index)){
+            printf("spx_block_skp_node_serial index is out of range\n");
+            node = node->next_node[0];
+            continue;
+        }
+        ubyte_t *item_ptr = spx_skp_serial_get_item(header, index);
+        int index_len = spx_msg_b2i(item_ptr + 1);
+        int64_t index_offset = spx_msg_b2l(item_ptr + 5);
+        struct spx_skp_serial_map_stat *block = spx_skp_serial_map(path, SpxSkpSerialBlockSize, index_offset);  
+
+        int off = 0;
+        while (off < index_len){
+            ubyte_t *pos = block->mapped + off;
+            int key_len = spx_msg_b2i(pos);
+            void *tmp_key = byte2key(pos + 4, key_len); 
+            printf("key: %s -> ", (char *)tmp_key);
+            if (NULL == tmp_key){
+                printf("tmp_key is NULL\n");
+                return -1;
+            }
+            free_key(tmp_key);
+
+            int value_len = spx_msg_b2i(pos + 4 + key_len + 8);
+            int tmp_len = 4 + key_len + 8 + 4 + value_len;
+            off += tmp_len;
+        }
+
+        spx_skp_serial_un_map(block);
+        node = node->next_node[0];
+        printf("\n\n");
+    }
+
+    return 0;
+}/*}}}*/
 
 static int spx_block_skp_node_key_detect(ubyte_t * block, int len, int *off, SpxSkpCmpDelegate cmp_key, void *key, SpxSkpB2ODelegate byte2key, SpxSkpFreeDelegate free_key){/*{{{*/
     if (NULL == block){
@@ -1098,8 +1166,9 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
         ubyte_t *tmp_item_ptr = index_item_ptr;
         int tmp_index_len = index_len;
         int split_flag = 0;
+        int mid_off = -1;
         if (SpxSkpSerialBlockSize - index_len < item_len){
-            int mid_off = spx_block_skp_node_less_off_detect(block_mst->mapped, index_len, mid_size);
+            mid_off = spx_block_skp_node_less_off_detect(block_mst->mapped, index_len, mid_size);
             if (-1 == mid_off){
                 goto r1;
             }
@@ -1166,14 +1235,13 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
         } else {
             if(1 == split_flag){
                 //set old right key
-                int mid_off = index_len - tmp_index_len;
-                int old_right_off = spx_block_skp_node_less_off_detect(block_mst->mapped, mid_off, mid_off);//mid_off is the new block's length
+                int old_right_off = spx_block_skp_node_less_off_detect(block_mst->mapped, mid_off, mid_off);//mid_off is the old block's length
                 int old_right_key_len = spx_msg_b2i(block_mst->mapped + old_right_off);
                 void *old_right_key = byte2key(block_mst->mapped + old_right_off + 4, old_right_key_len); 
                 g_spx_block_skp_node_serial_ctx.old_right_key = old_right_key;
 
                 //free tmp_block_mst who was new in split_flag = 1
-                spx_skp_serial_un_map(tmp_block_mst);
+                spx_skp_serial_un_map(tmp_block_mst);//this is very dangerous
             } else if (2 == split_flag){
                 if (0 == off){
                     //set old left key
@@ -1186,6 +1254,12 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
                     int old_right_off = tmp_index_len;
                     int old_right_key_len = spx_msg_b2i(block_mst->mapped + old_right_off);
                     void *old_right_key = byte2key(block_mst->mapped + old_right_off + 4, old_right_key_len);
+                    g_spx_block_skp_node_serial_ctx.old_right_key = old_right_key;
+                } else {
+                    //set old right key
+                    int old_right_off = spx_block_skp_node_less_off_detect(block_mst->mapped, mid_off, mid_off);//mid_off is the old block's length
+                    int old_right_key_len = spx_msg_b2i(block_mst->mapped + old_right_off);
+                    void *old_right_key = byte2key(block_mst->mapped + old_right_off + 4, old_right_key_len); 
                     g_spx_block_skp_node_serial_ctx.old_right_key = old_right_key;
                 }
             }

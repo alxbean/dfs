@@ -57,6 +57,7 @@ long server_handler(size_t req_size, char * request, char **response){/*{{{*/
 
     if (QUERY == obj->key.int8_val){
         printf("QUERY\n");
+
         struct spx_skp_serial_metadata_list *md_lst = msgpk_tree_query(obj);
         struct spx_skp_serial_metadata_list_node *tmd = md_lst->head;
         msgpk_tree_free(obj);
