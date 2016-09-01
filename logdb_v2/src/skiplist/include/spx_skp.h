@@ -29,11 +29,16 @@ extern "C" {
     typedef int (*SpxSkpCmpDelegate)(const void *, const void *);
     typedef void (*SpxSkpFreeDelegate)(void *key);
 
-    typedef enum{
+    typedef enum {
         DELETED = -1,
         EXISTED = 0,
         NEWADD = 1
     } stat_t;
+
+    typedef enum{
+        SKP_NORMAL = 0,//value list
+        SKP_REPLACE = 1//single value, new insert will replace it
+    } spx_skp_insert_mode_t;
 
     struct spx_skp_node_value{
         void * value; 
@@ -107,6 +112,7 @@ extern "C" {
 
     //query result
     struct spx_skp_query_result *spx_skp_query_result_new();
+    int spx_skp_query_result_is_exist(struct spx_skp_query_result *result, void *value, SpxSkpCmpDelegate cmp_value);
     int spx_skp_query_result_destory(struct spx_skp_query_result *result);
     int spx_skp_query_result_insert(struct spx_skp_query_result *result, void *value);
 
@@ -114,6 +120,7 @@ extern "C" {
     struct spx_skp_node *spx_skp_find(struct spx_skp *sl, void *key);
     int spx_skp_delete(struct spx_skp *sl, void *key);
     struct spx_skp_node *spx_skp_insert(struct spx_skp * sl, void * key, void * value);
+    struct spx_skp_node * spx_skp_insert_replace(struct spx_skp * skp, void * key, void * value);
     struct spx_skp *spx_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, const char * skp_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value);
     struct spx_skp *spx_skp_new_tmp(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cmp_value, const char * skp_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value);
     int spx_skp_destory(struct spx_skp * sl);

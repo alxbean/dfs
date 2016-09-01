@@ -17,7 +17,7 @@
 
 //declare
 static struct spx_skp_node * spx_skp_node_new(int level , void * key, void * value);
-static int spx_skp_value_insert(struct spx_skp *skp, struct spx_skp_node *node, void * value);
+static int spx_skp_value_insert(struct spx_skp *skp, spx_skp_insert_mode_t mode, struct spx_skp_node *node, void * value);
 static int spx_skp_node_free(struct spx_skp *skp, struct spx_skp_node *node);
 
 /*
@@ -70,24 +70,39 @@ static struct spx_skp_node * spx_skp_node_new(int level , void * key, void * val
 }/*}}}*/
 
 //if the Node Already exist map with key , then insert the new value of the key into the value list
-static int spx_skp_value_insert(struct spx_skp *skp, struct spx_skp_node *node, void * value)/*{{{*/
+static int spx_skp_value_insert(struct spx_skp *skp, spx_skp_insert_mode_t mode, struct spx_skp_node *node, void * value)/*{{{*/
 {
     struct spx_skp_node_value * pv = node->value;    
-    if ( !skp->cmp_value(value, pv->value) )
-        return 1;
-    while (pv->next_value != NULL){
-        pv = pv->next_value;
-        if (!skp->cmp_value(value, pv->value)) 
-            return 1;
+    if (NULL == pv){
+        printf("pv is NULL in spx_skp_value_insert\n");
+        return -1;
     }
 
-    struct spx_skp_node_value * nv = NewValue();
-    nv->value = value;
-    nv->status = NEWADD;
-    nv->index = -1;
-    nv->next_value =NULL;
-    pv->next_value = nv;
-    node->size++;
+    if ( !skp->cmp_value(value, pv->value) ) {
+        printf("value already exist\n");
+        return 1;
+    }
+
+    if (SKP_NORMAL == mode){
+        while (pv->next_value != NULL){
+            pv = pv->next_value;
+            if (!skp->cmp_value(value, pv->value)) {
+                printf("value already exist\n");
+                return 1;
+            }
+        }
+
+        struct spx_skp_node_value * nv = NewValue();
+        nv->value = value;
+        nv->status = NEWADD;
+        nv->index = -1;
+        nv->next_value =NULL;
+        pv->next_value = nv;
+        node->size++;
+    } else {
+        skp->free_value(pv->value);
+        pv->value = value;
+    }
 
     return 0;
 }/*}}}*/
@@ -155,6 +170,11 @@ struct spx_skp * spx_skp_new_tmp(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cm
         return NULL;
     }
 
+    if (NULL == skp_name){
+        printf("invaild skp name\n");
+        return NULL;
+    }
+
     strncpy(skp->name, skp_name, strlen(skp_name));
     *(skp->name + strlen(skp_name)) = '\0';
 
@@ -163,6 +183,7 @@ struct spx_skp * spx_skp_new_tmp(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cm
     skp->cmp_value = cmp_value;
     skp->is_free_key = false;
     skp->is_free_value = true;
+
     if (NULL == free_key){
         skp->free_key = spx_skp_default_free;
     } else {
@@ -199,6 +220,11 @@ struct spx_skp * spx_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, s
 {
     struct spx_skp * skp = (struct spx_skp*) malloc(sizeof(struct spx_skp));
     if(skp == NULL){
+        return NULL;
+    }
+
+    if (NULL == skp_name){
+        printf("invaild skp name\n");
         return NULL;
     }
 
@@ -263,9 +289,8 @@ int spx_skp_destory(struct spx_skp * skp)/*{{{*/
     return 0;
 }/*}}}*/
 
-//insert a Node to struct spx_skp
-struct spx_skp_node * spx_skp_insert(struct spx_skp * skp, void * key, void * value)/*{{{*/
-{
+//insert a Node to struct spx_skp, a key map multiple values
+struct spx_skp_node * spx_skp_insert(struct spx_skp * skp, void * key, void * value){/*{{{*/
     if (NULL == skp){
         printf("skp is NULL\n");
         return NULL;
@@ -291,9 +316,57 @@ struct spx_skp_node * spx_skp_insert(struct spx_skp * skp, void * key, void * va
     if ((cur_node != NULL) && (cur_node->key != NULL) && !skp->cmp_key(key, cur_node->key)){
         if (true == skp->is_free_key)
             skp->free_key(key);//note:memory leak bug without it!!!
-        if(spx_skp_value_insert(skp, cur_node, value) == 1)//value exist
-            return NULL;
-        skp->length++;//value count as a length node
+        if (0 == spx_skp_value_insert(skp, SKP_NORMAL, cur_node, value))
+            skp->length++;//value count as a length node
+        return cur_node;
+    }
+
+    int level = spx_skp_level_rand();
+    if (level > skp->level)
+    {//add level
+        for(i = skp->level + 1; i <= level; i++) update[i] = skp->head;
+        skp->level = level;
+    }
+
+    struct spx_skp_node *node = spx_skp_node_new(level, key, value);
+    for(i = level; i >= 0; i--){
+        node->next_node[i] = update[i]->next_node[i];
+        update[i]->next_node[i] = node;
+    }
+
+    skp->length++;
+
+    return node;
+}/*}}}*/
+
+//insert a Node to struct spx_skp, a key map a value
+struct spx_skp_node * spx_skp_insert_replace(struct spx_skp * skp, void * key, void * value){/*{{{*/
+    if (NULL == skp){
+        printf("skp is NULL\n");
+        return NULL;
+    }
+
+    if (NULL == key){
+        printf("key is NULL\n");
+        return NULL; 
+    }
+
+    struct spx_skp_node *update[SpxSkpMaxLevel];
+    struct spx_skp_node *cur_node = NULL, *pre_node = skp->head;
+
+    int i;
+    //find the nodes to insert after
+    for(i = skp->level; i >= 0; i--){
+        while ((cur_node = pre_node->next_node[i]) && (cur_node->key != NULL) && (skp->cmp_key(key , cur_node->key) > 0))
+            pre_node = cur_node; 
+        update[i] = pre_node;
+    }
+
+    //exist node 
+    if ((cur_node != NULL) && (cur_node->key != NULL) && !skp->cmp_key(key, cur_node->key)){
+        if (true == skp->is_free_key)
+            skp->free_key(key);//note:memory leak bug without it!!!
+        spx_skp_value_insert(skp, SKP_REPLACE, cur_node, value);
         return cur_node;
     }
 
@@ -363,6 +436,11 @@ struct spx_skp_query_result *spx_skp_query_result_new(){/*{{{*/
 }/*}}}*/
 
 int spx_skp_query_result_insert(struct spx_skp_query_result *result, void *value){/*{{{*/
+    if (NULL == result){
+        printf("result is NULL in spx_skp_query_result_insert\n");
+        return -1;
+    }
+
     if (NULL == value){
         printf("value is NULL\n");
         return -1;
@@ -387,9 +465,29 @@ int spx_skp_query_result_insert(struct spx_skp_query_result *result, void *value
     return 0;
 }/*}}}*/
 
-int spx_skp_query_result_filter(struct spx_skp_query_result *result){
+int spx_skp_query_result_is_exist(struct spx_skp_query_result *result, void *value, SpxSkpCmpDelegate cmp_value){/*{{{*/
+    if (NULL == result){
+        printf("result is NULL in spx_skp_query_result_is_exist\n");
+        return -1;
+    }
+
+    if (NULL ==value){
+        printf("value is NULL in spx_skp_query_result_is_exist\n");
+        return -1;
+    }
+
+    struct spx_skp_query_result_node *tmp_node = result->head;
+
+    while (tmp_node != NULL){
+        if (tmp_node->value != NULL && !cmp_value(tmp_node->value, value)){
+            return 1;
+        }
+
+        tmp_node = tmp_node->next_result_node;
+    }
+
     return 0;
-}
+}/*}}}*/
 
 int spx_skp_query_result_destory(struct spx_skp_query_result *result){/*{{{*/
     if (NULL == result){
@@ -439,7 +537,8 @@ int spx_skp_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *r
         {   // if q->size = 0, this node is DELETED
             struct spx_skp_node_value * tmp_nv = cur_node->value; 
             while (tmp_nv != NULL){
-                spx_skp_query_result_insert(result, tmp_nv->value);
+                if (0 == spx_skp_query_result_is_exist(result, tmp_nv->value, skp->cmp_value))
+                    spx_skp_query_result_insert(result, tmp_nv->value);
                 tmp_nv = tmp_nv->next_value;
             }
             break;
@@ -473,7 +572,8 @@ int spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key, str
     while( (cur_node != NULL) && ((cur_node->key != NULL) && skp->cmp_key(end_key, cur_node->key) >= 0) && cur_node->size !=0 ){
         struct spx_skp_node_value * tmp_nv = cur_node->value;
         while (tmp_nv != NULL){
-            spx_skp_query_result_insert(result, tmp_nv->value);
+            if (0 == spx_skp_query_result_is_exist(result, tmp_nv->value, skp->cmp_value))
+                spx_skp_query_result_insert(result, tmp_nv->value);
             tmp_nv = tmp_nv->next_value;
         }
         cur_node = cur_node->next_node[0];
@@ -504,7 +604,8 @@ int spx_skp_bigger_near_query(struct spx_skp *skp, void *key, struct spx_skp_que
         if ( (cur_node->key != NULL) && skp->cmp_key(key, cur_node->key) <= 0 && cur_node->size != 0){
             struct spx_skp_node_value *tmp_nv = cur_node->value; 
             while (tmp_nv != NULL){
-                spx_skp_query_result_insert(result, tmp_nv->value);
+                if (0 == spx_skp_query_result_is_exist(result, tmp_nv->value, skp->cmp_value))
+                    spx_skp_query_result_insert(result, tmp_nv->value);
                 tmp_nv = tmp_nv->next_value;
             }
             break;
@@ -538,8 +639,9 @@ int spx_skp_bigger_query(struct spx_skp *skp, void *key, struct spx_skp_query_re
         if ((cur_node->key !=NULL) && skp->cmp_key(key, cur_node->key) <= 0 && cur_node->size != 0){//if p->size = 0, it has been deleted
             struct spx_skp_node_value * tmp_nv = cur_node->value; 
             while (tmp_nv != NULL){
-               spx_skp_query_result_insert(result, tmp_nv->value);
-               tmp_nv = tmp_nv->next_value;
+                if (0 == spx_skp_query_result_is_exist(result, tmp_nv->value, skp->cmp_value))
+                    spx_skp_query_result_insert(result, tmp_nv->value);
+                tmp_nv = tmp_nv->next_value;
             }   
         }
         cur_node = cur_node->next_node[0];
@@ -572,7 +674,8 @@ int spx_skp_smaller_near_query(struct spx_skp *skp, void *key, struct spx_skp_qu
         if( (cur_node->key != NULL) && (skp->cmp_key(key, cur_node->key) >= 0) && ( ((next_node->key != NULL) && (skp->cmp_key(key, next_node->key) <= 0)) || (NULL == next_node)) ){
             struct spx_skp_node_value * tmp_nv = cur_node->value; 
             while (tmp_nv != NULL){
-                spx_skp_query_result_insert(result, tmp_nv->value);
+                if (0 == spx_skp_query_result_is_exist(result, tmp_nv->value, skp->cmp_value))
+                    spx_skp_query_result_insert(result, tmp_nv->value);
                 tmp_nv = tmp_nv->next_value;
             }
             break;
@@ -607,7 +710,8 @@ int spx_skp_smaller_query(struct spx_skp *skp, void *key, struct spx_skp_query_r
         if( (cur_node->key != NULL) && (skp->cmp_key(key, cur_node->key) >= 0)){
             struct spx_skp_node_value * tmp_nv = cur_node->value; 
             while (tmp_nv != NULL){
-                spx_skp_query_result_insert(result, tmp_nv->value);
+                if (0 == spx_skp_query_result_is_exist(result, tmp_nv->value, skp->cmp_value))
+                    spx_skp_query_result_insert(result, tmp_nv->value);
                 tmp_nv = tmp_nv->next_value;
             }
         } else {

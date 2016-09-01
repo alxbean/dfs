@@ -11,6 +11,8 @@
 #define MsgpkTreeKeySize 100
 #define MsgpkTreeUnidSize 100
 
+struct msgpk_object *g_root;
+
 //declare
 static void msgpk_tree_feed_query_result(struct spx_skp *skp, int *uni_count, struct spx_skp_query_result *res);
 static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, int *uni_count, struct spx_skp_serial_metadata_list *md_lst);
@@ -142,7 +144,7 @@ static int msgpk_tree_level_equal_query(void *query_key, struct spx_skp *skp, st
     if (NULL == skp){
         printf("skp is NULL in msgpk_tree_level_equal_query\n");
     } else {
-        //query in insert_skp
+        //query in insert_skp, no need to lock for single thread
         spx_skp_query(skp, query_key, result);
     }
 
@@ -303,6 +305,8 @@ char * msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request)
         printf("read index config error\n");
         return NULL;
     }
+
+    g_root = root;
 
     printf("***************writing metadata*****************\n");
     struct spx_skp_serial_metadata *md = spx_skp_serial_data_writer2md((const ubyte_t*)request, req_size);
