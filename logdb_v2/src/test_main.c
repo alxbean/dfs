@@ -91,7 +91,7 @@ long server_handler(size_t req_size, char * request, char **response){/*{{{*/
         return pb->off;
     } else if (ADD == obj->key.int8_val){
         printf("ADD\n");
-        char * unid = msgpk_tree_add(obj, req_size, request);
+        char *unid = msgpk_tree_add(obj, req_size, request);
         *response = unid;
         msgpk_tree_free(obj);
         if (NULL == unid)

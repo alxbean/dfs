@@ -11,8 +11,6 @@
 #define MsgpkTreeKeySize 100
 #define MsgpkTreeUnidSize 100
 
-struct msgpk_object *g_root;
-
 //declare
 static void msgpk_tree_feed_query_result(struct spx_skp *skp, int *uni_count, struct spx_skp_query_result *res);
 static void msgpk_tree_feed_metadata_list(struct spx_skp *skp, int *uni_count, struct spx_skp_serial_metadata_list *md_lst);
@@ -306,79 +304,75 @@ char * msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request)
         return NULL;
     }
 
-    g_root = root;
-
-    printf("***************writing metadata*****************\n");
     struct spx_skp_serial_metadata *md = spx_skp_serial_data_writer2md((const ubyte_t*)request, req_size);
-    printf("********************done************************\n");
-    char *unid = (char *) malloc(sizeof(char) * MsgpkTreeUnidSize);
     if(NULL == md){
         perror("data_writer2md:");
         return NULL;
     }
 
+    char *unid = (char *) malloc(sizeof(char) * MsgpkTreeUnidSize);
     spx_skp_serial_gen_unid(md, unid, MsgpkTreeUnidSize);
 
-    while (tmp_idx->next_idx){
-        tmp_idx = tmp_idx->next_idx;
-        char *index_name = tmp_idx->index;
-        SpxSkpCmpDelegate cmp_key; 
-        SpxSkpCmpDelegate cmp_value = cmp_md;
-        object_value kv;
-        kv.str_val = index_name;
-        object_type kt = OBJ_TYPE_STR;
-        void *key = NULL;
-        spx_skp_type key_type = SKP_TYPE_STR;
-        spx_skp_type value_type = SKP_TYPE_MD;
+    //while (tmp_idx->next_idx){
+    //    tmp_idx = tmp_idx->next_idx;
+    //    char *index_name = tmp_idx->index;
+    //    SpxSkpCmpDelegate cmp_key; 
+    //    SpxSkpCmpDelegate cmp_value = cmp_md;
+    //    object_value kv;
+    //    kv.str_val = index_name;
+    //    object_type kt = OBJ_TYPE_STR;
+    //    void *key = NULL;
+    //    spx_skp_type key_type = SKP_TYPE_STR;
+    //    spx_skp_type value_type = SKP_TYPE_MD;
 
-        struct msgpk_object *obj = msgpk_tree_find_rule_node(root, 1, kt, kv);
-        if (NULL == obj){
-            printf("not found index_name: %s\n", index_name);
-            continue;
-        }
+    //    struct msgpk_object *obj = msgpk_tree_find_rule_node(root, 1, kt, kv);
+    //    if (NULL == obj){
+    //        printf("not found index_name: %s\n", index_name);
+    //        continue;
+    //    }
 
-        switch(tmp_idx->type){
-            case 0:
-                cmp_key = cmp_str;
-                key = (char *) calloc(1, sizeof(char) * (obj->obj_len + 1));
-                strncpy(key, obj->value.str_val, obj->obj_len); 
-                key_type = SKP_TYPE_STR;
-                break;
-            case 1:
-                cmp_key = cmp_int;
-                key = (int *) malloc(sizeof(int));
-                *(int *)key = obj->value.int32_val;
-                key_type = SKP_TYPE_INT;
-                break;
-            case 2:
-                cmp_key = cmp_long;
-                key = (int64_t *) malloc(sizeof(int64_t));
-                *(int64_t *)key = obj->value.int64_val;
-                key_type = SKP_TYPE_LONG;
-                break;
-            default:
-                printf("not support type of index_name\n");
-                continue;
-        }
+    //    switch(tmp_idx->type){
+    //        case 0:
+    //            cmp_key = cmp_str;
+    //            key = (char *) calloc(1, sizeof(char) * (obj->obj_len + 1));
+    //            strncpy(key, obj->value.str_val, obj->obj_len); 
+    //            key_type = SKP_TYPE_STR;
+    //            break;
+    //        case 1:
+    //            cmp_key = cmp_int;
+    //            key = (int *) malloc(sizeof(int));
+    //            *(int *)key = obj->value.int32_val;
+    //            key_type = SKP_TYPE_INT;
+    //            break;
+    //        case 2:
+    //            cmp_key = cmp_long;
+    //            key = (int64_t *) malloc(sizeof(int64_t));
+    //            *(int64_t *)key = obj->value.int64_val;
+    //            key_type = SKP_TYPE_LONG;
+    //            break;
+    //        default:
+    //            printf("not support type of index_name\n");
+    //            continue;
+    //    }
 
-        printf("spx_skp_list_get\n");
-        struct spx_skp *skp = spx_skp_list_get_push_queue(&g_spx_skp_list, index_name, &err);
+    //    printf("spx_skp_list_get\n");
+    //    struct spx_skp *skp = spx_skp_list_get_push_queue(&g_spx_skp_list, index_name, &err);
 
-        if(NULL == skp){
-            skp = spx_skp_new(key_type, cmp_key, value_type, cmp_value, index_name, NULL, msgpk_tree_metadata_free);
-            if (NULL == skp){
-                printf("spx_skp_new failed, skp is NULL\n");
-                return NULL;
-            }
+    //    if(NULL == skp){
+    //        skp = spx_skp_new(key_type, cmp_key, value_type, cmp_value, index_name, NULL, msgpk_tree_metadata_free);
+    //        if (NULL == skp){
+    //            printf("spx_skp_new failed, skp is NULL\n");
+    //            return NULL;
+    //        }
 
-            spx_skp_list_add(&g_spx_skp_list, skp);
-        }
+    //        spx_skp_list_add(&g_spx_skp_list, skp);
+    //    }
 
 
-        struct spx_skp_serial_metadata * new_md = spx_skp_serial_md_copy(md);
-        printf("spx_skp_insert\n");
-        spx_skp_insert(skp, key, new_md); 
-    }
+    //    struct spx_skp_serial_metadata * new_md = spx_skp_serial_md_copy(md);
+    //    printf("spx_skp_insert\n");
+    //    spx_skp_insert(skp, key, new_md); 
+    //}
 
     spx_skp_serial_md_free(md);
     return unid;

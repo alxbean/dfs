@@ -135,6 +135,7 @@ static int spx_skp_serial_is_dir_exist(const char *dir_path){/*{{{*/
         if (-1 == mkdir(dir_path, S_IRWXU | S_IRWXG | S_IROTH | S_IROTH))
             return -1;
     }
+
     return 0;
 }/*}}}*/
 
@@ -403,53 +404,53 @@ static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, con
     getcwd(path, sizeof(path));
     snprintf(path1, sizeof(path1), "%s/skiplist/data/%s", path, file);
 
-    if (NULL == g_spx_skp_serial_log_map.log_map){
-        int path_len = strlen(path1);
-        strncpy(g_spx_skp_serial_log_map.path, path1, path_len);
-        *(g_spx_skp_serial_log_map.path + path_len) = '\0';
-        g_spx_skp_serial_log_map.log_map = spx_skp_serial_map(path1, SpxSkpSerialMaxLogSize, 0);  
-        g_spx_skp_serial_log_map.off = 0;
-        g_spx_skp_serial_log_map.map_size = SpxSkpSerialMaxLogSize;
-    } else {
-        if (strncmp(g_spx_skp_serial_log_map.path, path1, strlen(path1)) != 0){
-            spx_skp_serial_flush_map(g_spx_skp_serial_log_map.log_map);
-            if (-1 == spx_skp_serial_un_map(g_spx_skp_serial_log_map.log_map)){
-                printf("spx_skp_serial_un_map file:%s failed\n", g_spx_skp_serial_log_map.path);
-                return NULL;
-            }
-            int path_len = strlen(path1);
-            strncpy(g_spx_skp_serial_log_map.path, path1, path_len);
-            *(g_spx_skp_serial_log_map.path + path_len) = '\0';
-            g_spx_skp_serial_log_map.log_map = spx_skp_serial_map(path1, SpxSkpSerialMaxLogSize, 0);  
-            g_spx_skp_serial_log_map.off = 0;
-            g_spx_skp_serial_log_map.map_size = SpxSkpSerialMaxLogSize;
-        }
-    }
-
-    printf("writing data into file:%s ...\n", path1);
-    if ((g_spx_skp_serial_log_map.map_size - g_spx_skp_serial_log_map.off) < (int64_t)len){
-        spx_skp_serial_flush_map(g_spx_skp_serial_log_map.log_map);
-        if (-1 == spx_skp_serial_un_map(g_spx_skp_serial_log_map.log_map)){
-            printf("spx_skp_serial_un_map file:%s failed\n", g_spx_skp_serial_log_map.path);
-            return NULL;
-        }
-        g_spx_skp_serial_log_map.log_map = spx_skp_serial_map(path1, g_spx_skp_serial_log_map.map_size + len, 0);  
-        g_spx_skp_serial_log_map.map_size = g_spx_skp_serial_log_map.map_size + len;
-    }
-
-    memcpy(g_spx_skp_serial_log_map.log_map->mapped + g_spx_skp_serial_log_map.off, data, len);
-    g_spx_skp_serial_log_map.off = g_spx_skp_serial_log_map.off + len;
-    //printf("open file: %s\n", path1);
-    //FILE *fp = fopen(path1, "a+"); 
-    //if (NULL == fp){
-    //    printf("opening file:%s\n", path1);
-    //    perror("fp is NULL");
-    //    return NULL;
+    //if (NULL == g_spx_skp_serial_log_map.log_map){
+    //    int path_len = strlen(path1);
+    //    strncpy(g_spx_skp_serial_log_map.path, path1, path_len);
+    //    *(g_spx_skp_serial_log_map.path + path_len) = '\0';
+    //    g_spx_skp_serial_log_map.log_map = spx_skp_serial_map(path1, SpxSkpSerialMaxLogSize, 0);  
+    //    g_spx_skp_serial_log_map.off = 0;
+    //    g_spx_skp_serial_log_map.map_size = SpxSkpSerialMaxLogSize;
+    //} else {
+    //    if (strncmp(g_spx_skp_serial_log_map.path, path1, strlen(path1)) != 0){
+    //        spx_skp_serial_flush_map(g_spx_skp_serial_log_map.log_map);
+    //        if (-1 == spx_skp_serial_un_map(g_spx_skp_serial_log_map.log_map)){
+    //            printf("spx_skp_serial_un_map file:%s failed\n", g_spx_skp_serial_log_map.path);
+    //            return NULL;
+    //        }
+    //        int path_len = strlen(path1);
+    //        strncpy(g_spx_skp_serial_log_map.path, path1, path_len);
+    //        *(g_spx_skp_serial_log_map.path + path_len) = '\0';
+    //        g_spx_skp_serial_log_map.log_map = spx_skp_serial_map(path1, SpxSkpSerialMaxLogSize, 0);  
+    //        g_spx_skp_serial_log_map.off = 0;
+    //        g_spx_skp_serial_log_map.map_size = SpxSkpSerialMaxLogSize;
+    //    }
     //}
 
-    //printf("writing data into fp...\n");
-    //fwrite(data, sizeof(char), len, fp);
-    //printf("writing data done\n");
+    //printf("writing data into file:%s ...\n", path1);
+    //if ((g_spx_skp_serial_log_map.map_size - g_spx_skp_serial_log_map.off) < (int64_t)len){
+    //    spx_skp_serial_flush_map(g_spx_skp_serial_log_map.log_map);
+    //    if (-1 == spx_skp_serial_un_map(g_spx_skp_serial_log_map.log_map)){
+    //        printf("spx_skp_serial_un_map file:%s failed\n", g_spx_skp_serial_log_map.path);
+    //        return NULL;
+    //    }
+    //    g_spx_skp_serial_log_map.log_map = spx_skp_serial_map(path1, g_spx_skp_serial_log_map.map_size + len, 0);  
+    //    g_spx_skp_serial_log_map.map_size = g_spx_skp_serial_log_map.map_size + len;
+    //}
+    //memcpy(g_spx_skp_serial_log_map.log_map->mapped + g_spx_skp_serial_log_map.off, data, len);
+    //g_spx_skp_serial_log_map.off = g_spx_skp_serial_log_map.off + len;
+                                                                                                            
+    printf("open file: %s\n", path1);
+    FILE *fp = fopen(path1, "a+"); 
+    if (NULL == fp){
+        printf("opening file:%s\n", path1);
+        perror("fp is NULL");
+        return NULL;
+    }
+
+    printf("writing data into fp...\n");
+    fwrite(data, sizeof(char), len, fp);
+    printf("writing data done\n");
 
     printf("metadata init...\n");
     struct spx_skp_serial_metadata *md = (struct spx_skp_serial_metadata*) malloc(sizeof(struct spx_skp_serial_metadata));
@@ -457,11 +458,10 @@ static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, con
     strncpy(md->file, file, file_len);
     *(md->file + file_len) = '\0';
     md->len = len;
-    printf("ftell fp...\n");
-    md->off = g_spx_skp_serial_log_map.off - len;
-
-    //fclose(fp);
-
+    //md->off = g_spx_skp_serial_log_map.off - len;
+    md->off = ftell(fp);
+    fclose(fp);
+    
     return md;
 }/*}}}*/
 
@@ -476,7 +476,8 @@ static int spx_skp_serial_which_file(char *file){/*{{{*/
     snprintf(path1, sizeof(path1), "%s/skiplist/data/%s", path, time_path);
     snprintf(path2, sizeof(path2), "%s/%04d.log", path1, g_file_count);
 
-    while(g_spx_skp_serial_log_map.off >= SpxSkpSerialMaxLogSize && g_file_count < SpxSkpMaxLogCount)
+    //while( !access(path2, F_OK) && ((g_spx_skp_serial_log_map.off > SpxSkpSerialMaxLogSize) && g_file_count < SpxSkpMaxLogCount))
+    while( (spx_skp_serial_get_file_size(path2) > SpxSkpSerialMaxLogSize && g_file_count < SpxSkpMaxLogCount))
         snprintf(path2, sizeof(path2), "%s/%04d.log", path1, ++g_file_count);
 
     if (g_file_count >= SpxSkpMaxLogCount){
