@@ -74,7 +74,7 @@ extern "C" {
     struct spx_skp * spx_skp_list_serial_add(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cmp_value, SpxSkpB2ODelegate byte2key, SpxSkpB2ODelegate byte2value, const char * sl_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value);
     struct spx_skp_serial_metadata_list * spx_skp_serial_metadata_list_new();
     int spx_skp_serial_metadata_list_insert(struct spx_skp_serial_metadata_list * md_lst, struct spx_skp_serial_metadata *md);
-    int spx_skp_serial_metadata_list_free(struct spx_skp_serial_metadata_list * md_lst);
+    int spx_skp_serial_metadata_list_free(struct spx_skp_serial_metadata_list * md_lst, bool_t is_free_md);
     ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len);
     struct spx_skp_serial_metadata* spx_skp_serial_data_writer2md(const ubyte_t *data, size_t len);
     ubyte_t * spx_skp_serial_data_reader(struct spx_skp_serial_metadata *md);

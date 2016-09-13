@@ -5,7 +5,6 @@
 > Created Time: Mon 07 Sep 2015 03:13:11 AM UTC
 ************************************************************************/
 #include <ev.h>
-#include <pthread.h>
 #include "spx_block_skp.h"
 #include "spx_skp_serial.h"
 #include "spx_string.h"
@@ -16,8 +15,8 @@
 
 #define NewBlockNode(n) ((struct spx_block_skp_node *) calloc(1, sizeof(struct spx_block_skp_node) + n*sizeof(struct spx_block_skp_node*)))
 
+pthread_mutex_t g_block_skp_mutex = PTHREAD_MUTEX_INITIALIZER;//mutex for spx_block_skp
 pthread_mutex_t g_skp_queue_mutex = PTHREAD_MUTEX_INITIALIZER;//mutex for spx_skp_queue 
-pthread_mutex_t g_block_skp_mutex = PTHREAD_MUTEX_INITIALIZER;//mutex for spx_skp_queue 
 
 //spx_skp_queue
 static struct spx_skp_queue_node *spx_skp_queue_node_new(struct spx_skp *skp);
@@ -81,6 +80,14 @@ static int spx_block_skp_node_free(struct spx_block_skp *block_skp, struct spx_b
  *spx_skp_queue method 
  */
 
+int spx_skp_queue_lock(){/*{{{*/
+    return pthread_mutex_lock(&g_skp_queue_mutex);
+}/*}}}*/
+
+int spx_skp_queue_unlock(){/*{{{*/
+    return pthread_mutex_unlock(&g_skp_queue_mutex);
+}/*}}}*/
+
 static struct spx_skp_queue_node *spx_skp_queue_node_new(struct spx_skp *skp){/*{{{*/
     if (NULL == skp){
         printf("warning: the param skp in spx_skp_queue_node_new is NULL\n");
@@ -131,7 +138,8 @@ static int spx_skp_queue_push(struct spx_skp *skp){/*{{{*/
     }
 
     struct spx_skp_queue_node *new_node = spx_skp_queue_node_new(skp);
-    pthread_mutex_lock(&g_skp_queue_mutex);
+
+    spx_skp_queue_lock();
     if (NULL == skp_queue->tail){
         skp_queue->head = new_node;
         skp_queue->tail = new_node;
@@ -139,7 +147,8 @@ static int spx_skp_queue_push(struct spx_skp *skp){/*{{{*/
         skp_queue->tail->next_queue_node = new_node;
         skp_queue->tail = new_node;
     }
-    pthread_mutex_unlock(&g_skp_queue_mutex);
+
+    spx_skp_queue_unlock();
 
     return 0;
 }/*}}}*/
@@ -163,19 +172,20 @@ static struct spx_skp *spx_skp_queue_pop(){/*{{{*/
             return NULL;
         }
 
+        spx_skp_queue_lock();
         struct spx_skp_queue_node *head2free = skp_queue->head;
-        pthread_mutex_lock(&g_skp_queue_mutex);
         skp_queue->head = skp_queue->head->next_queue_node;
         if (NULL == skp_queue->head)
             skp_queue->tail = NULL;
-        pthread_mutex_unlock(&g_skp_queue_mutex);
+        spx_skp_queue_unlock();
         spx_skp_queue_node_free(&head2free);
     }
 
     return skp;
 }/*}}}*/
 
-struct spx_skp_list *spx_skp_queue_visit(struct spx_skp_queue *skp_queue){/*{{{*/
+struct spx_skp_list *spx_skp_queue_visit(){/*{{{*/
+    struct spx_skp_queue *skp_queue = &g_spx_skp_queue;
     if (NULL == skp_queue){
         printf("a fatal error in spx_skp_queue_pop\n");
         return NULL;
@@ -183,12 +193,10 @@ struct spx_skp_list *spx_skp_queue_visit(struct spx_skp_queue *skp_queue){/*{{{*
 
     struct spx_skp_list *skp_list = spx_skp_list_new();
     struct spx_skp_queue_node *skp_queue_visit_node = skp_queue->head;
-    pthread_mutex_lock(&g_skp_queue_mutex);
     while (skp_queue_visit_node != NULL){
         spx_skp_list_add(skp_list, skp_queue_visit_node->skp);
         skp_queue_visit_node = skp_queue_visit_node->next_queue_node;
     }
-    pthread_mutex_unlock(&g_skp_queue_mutex);
 
     return skp_list;
 }/*}}}*/

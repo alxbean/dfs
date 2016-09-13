@@ -12,8 +12,11 @@
 extern "C" {
 #endif
 #include <unistd.h>
+#include <pthread.h>
 #include "spx_types.h"
 #include "spx_skp.h"
+
+
     //block_skp
     struct spx_block_skp_node{
         void *left_key;
@@ -59,7 +62,9 @@ extern "C" {
     } g_spx_skp_queue;
 
     //spx_skp_queue
-    struct spx_skp_list *spx_skp_queue_visit(struct spx_skp_queue *skp_queue);
+    struct spx_skp_list *spx_skp_queue_visit();
+    int spx_skp_queue_lock();
+    int spx_skp_queue_unlock();
 
     //spx_skp_list method 
     struct spx_skp_idx *spx_skp_read_config();

@@ -28,6 +28,7 @@ extern "C" {
     
     typedef int (*SpxSkpCmpDelegate)(const void *, const void *);
     typedef void (*SpxSkpFreeDelegate)(void *key);
+    typedef void *(*SpxSkpValueCopyDelegate)(void *);
 
     typedef enum {
         DELETED = -1,
@@ -103,12 +104,12 @@ extern "C" {
     int spx_skp_level_rand();
 
     //query
-    int spx_skp_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
-    int spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key, struct spx_skp_query_result *result);
-    int spx_skp_bigger_near_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
-    int spx_skp_bigger_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
-    int spx_skp_smaller_near_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
-    int spx_skp_smaller_query(struct spx_skp *skp, void *key, struct spx_skp_query_result *result);
+    int spx_skp_query(struct spx_skp *skp, void *key, SpxSkpValueCopyDelegate copy_value, struct spx_skp_query_result *result);
+    int spx_skp_range_query(struct spx_skp *skp, void *start_key, void *end_key, SpxSkpValueCopyDelegate copy_value, struct spx_skp_query_result *result);
+    int spx_skp_bigger_near_query(struct spx_skp *skp, void *key, SpxSkpValueCopyDelegate copy_value, struct spx_skp_query_result *result);
+    int spx_skp_bigger_query(struct spx_skp *skp, void *key, SpxSkpValueCopyDelegate copy_value, struct spx_skp_query_result *result);
+    int spx_skp_smaller_near_query(struct spx_skp *skp, void *key, SpxSkpValueCopyDelegate copy_value, struct spx_skp_query_result *result);
+    int spx_skp_smaller_query(struct spx_skp *skp, void *key, SpxSkpValueCopyDelegate copy_value, struct spx_skp_query_result *result);
 
     //query result
     struct spx_skp_query_result *spx_skp_query_result_new();
@@ -122,7 +123,7 @@ extern "C" {
     struct spx_skp_node *spx_skp_insert(struct spx_skp * sl, void * key, void * value);
     struct spx_skp_node * spx_skp_insert_replace(struct spx_skp * skp, void * key, void * value);
     struct spx_skp *spx_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, const char * skp_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value);
-    struct spx_skp *spx_skp_new_tmp(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cmp_value, const char * skp_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value);
+    struct spx_skp *spx_skp_new_tmp(SpxSkpCmpDelegate cmp_key, SpxSkpCmpDelegate cmp_value, const char * skp_name, SpxSkpFreeDelegate free_key, SpxSkpFreeDelegate free_value, bool_t is_free_key);
     int spx_skp_destory(struct spx_skp * sl);
     int spx_skp_node_remove(struct spx_skp * sl, struct spx_skp_node *q);
 

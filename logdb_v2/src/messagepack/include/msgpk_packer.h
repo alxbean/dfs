@@ -25,6 +25,7 @@ extern "C" {
     //Interfce
     struct pack_buffer *msgpk_message_packer(struct msgpk_object *obj);
     void msgpk_print_hex(const ubyte_t *buf, unsigned int len);
+    int msgpk_message_destory(struct pack_buffer *pb);
 
     //basic pack method
     void msgpk_pack_string(struct pack_buffer *pb, size_t len);

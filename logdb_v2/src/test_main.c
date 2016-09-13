@@ -38,6 +38,22 @@
 #define FrzCtxPoolSize 1024
 #define MsgpkTreeCtxPoolSize 1024
 
+static long response_set(struct pack_buffer *pb,  char **response);
+
+static long response_set(struct pack_buffer *pb,  char **response){/*{{{*/
+    if (NULL == response){
+        perror("response_set:");
+        msgpk_message_destory(pb);
+        return -1;
+    }
+    *response = (char *) malloc(sizeof(char) * pb->off);
+    memcpy(*response, pb->buffer, pb->off);
+    long off = pb->off;
+    msgpk_message_destory(pb);
+
+    return off;
+}/*}}}*/
+
 long server_handler(size_t req_size, char * request, char **response){/*{{{*/
    // printf("\n=====================unpacking==================\n");
     struct msgpk_object *obj = msgpk_message_unpacker((ubyte_t*)request, req_size);
@@ -59,36 +75,42 @@ long server_handler(size_t req_size, char * request, char **response){/*{{{*/
         printf("QUERY\n");
 
         struct spx_skp_serial_metadata_list *md_lst = msgpk_tree_query(obj);
-        struct spx_skp_serial_metadata_list_node *tmd = md_lst->head;
         msgpk_tree_free(obj);
+        if (NULL == md_lst){
+            printf("query md_lst is NULL\n");
+            return -1;
+        }
 
+        struct spx_skp_serial_metadata_list_node *tmd = md_lst->head;
         if (NULL == tmd){
-            spx_skp_serial_metadata_list_free(md_lst);
+            spx_skp_serial_metadata_list_free(md_lst, true);
             return -1;    
         }
 
         struct tree_context *ctx = msgpk_build_init(); 
         msgpk_build_tree_array_begin(ctx);
         int md_cnt = 0;
-        while(tmd){
+        while (tmd) {
             struct spx_skp_serial_metadata *md = tmd->md;
             char unid[100];
             spx_skp_serial_gen_unid(md, unid, sizeof(unid));
             ubyte_t *data = spx_skp_serial_data_reader(md);
             msgpk_build_tree_bin(ctx, data, md->len);
+            free(data);//need to free, or it will leak memory
             md_cnt++;
             tmd = tmd->next_md;
         }
+
         msgpk_build_tree_array_end(ctx, md_cnt);
-        spx_skp_serial_metadata_list_free(md_lst);
+        spx_skp_serial_metadata_list_free(md_lst, true);
         printf("\n======================response tree==================\n");
         msgpk_tree_print(ctx->root, 0);
         struct pack_buffer *pb = msgpk_message_packer(ctx->root->child);
         msgpk_print_hex(pb->buffer, pb->off);
         printf("\n----------------Response----------------\n");
         msgpk_build_free(ctx);
-        *response = (char *)pb->buffer;
-        return pb->off;
+
+        return response_set(pb, response);
     } else if (ADD == obj->key.int8_val){
         printf("ADD\n");
         char *unid = msgpk_tree_add(obj, req_size, request);

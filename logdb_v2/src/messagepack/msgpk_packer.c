@@ -20,6 +20,7 @@
 
 //declare
 static struct pack_buffer* new_pack_buffer();
+static int free_pack_buffer(struct pack_buffer **ppb);
 static int pack_append_buffer(struct pack_buffer *pb, const ubyte_t *buf, size_t len);
 static void pack_message(struct pack_buffer *pb, struct msgpk_object *obj);
 
@@ -31,6 +32,20 @@ static struct pack_buffer* new_pack_buffer(){/*{{{*/
     }
 
     return pb;
+}/*}}}*/
+
+static int free_pack_buffer(struct pack_buffer **ppb){/*{{{*/
+    if (NULL == ppb){
+        perror("free_pack_buffer:");
+        return -1;
+    }
+
+    struct pack_buffer *dead_pb = *ppb;
+    free(dead_pb->buffer);
+    free(dead_pb);
+    *ppb = NULL;
+
+    return 0;
 }/*}}}*/
 
 static int pack_append_buffer(struct pack_buffer *pb, const ubyte_t *buf, size_t len){/*{{{*/
@@ -516,6 +531,15 @@ struct pack_buffer *msgpk_message_packer(struct msgpk_object *obj){/*{{{*/
 
         return pb;
 } /*}}}*/
+
+int msgpk_message_destory(struct pack_buffer *pb){
+    if (NULL == pb){
+        perror("msgpk_message_destory:");
+        return -1;
+    }
+    
+    return free_pack_buffer(&pb);
+}
 
 void msgpk_print_hex(const ubyte_t *buf, unsigned int len){/*{{{*/
     size_t i = 0;
