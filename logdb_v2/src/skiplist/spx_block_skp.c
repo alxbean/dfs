@@ -843,7 +843,7 @@ static int spx_block_skp_event_insert(struct spx_skp *skp){/*{{{*/
     struct spx_block_skp *block_skp = spx_block_skp_list_get(skp->name, skp->key_type, skp->cmp_key, skp->value_type, skp->cmp_value, skp->free_key);
     if (block_skp != NULL ){
         spx_block_skp_merge(block_skp, skp);
-        printf("############################ SKP_LEN: %d ###############################", (int)block_skp->length);
+        printf("############################ SKP_LEN: %d ###############################\n", (int)block_skp->length);
     }
 
     spx_skp_destory(skp);

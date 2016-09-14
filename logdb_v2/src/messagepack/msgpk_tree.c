@@ -377,7 +377,6 @@ char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){
                 continue;
         }
 
-        printf("spx_skp_list_get\n");
         struct spx_skp *skp = spx_skp_list_get_push_queue(&g_spx_skp_list, index_name, &err);
 
         if(NULL == skp){
@@ -391,8 +390,7 @@ char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){
         }
 
 
-        struct spx_skp_serial_metadata * new_md = spx_skp_serial_md_copy(md);
-        printf("spx_skp_insert\n");
+        struct spx_skp_serial_metadata *new_md = spx_skp_serial_md_copy(md);
         spx_skp_insert(skp, key, new_md); 
     }
 

@@ -275,8 +275,10 @@ struct spx_skp * spx_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, s
 //NOTE: TODO the param poniter ,which will be free should be a double pointer "struct spx_skp ** skp"
 int spx_skp_destory(struct spx_skp * skp)/*{{{*/
 {
-    if(!skp)
+    if(NULL == skp){
+        printf("skp in spx_skp_destory is NULL\n");
         return -1;
+    }
     printf("destory skp:%s\n", skp->name);
     struct spx_skp_node *tmp_skp_node = skp->head;
     while (tmp_skp_node){

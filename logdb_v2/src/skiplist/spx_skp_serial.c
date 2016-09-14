@@ -405,12 +405,12 @@ static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, con
         return NULL;
     }
 
-    printf("writing data into fp...\n");
+
+    printf("writing data...\n");
     fwrite(data, sizeof(char), len, fp);
     //fflush(fp);
     printf("writing data done\n");
 
-    printf("metadata init...\n");
     struct spx_skp_serial_metadata *md = (struct spx_skp_serial_metadata*) malloc(sizeof(struct spx_skp_serial_metadata));
     int file_len = strlen(file);
     strncpy(md->file, file, file_len);
@@ -522,7 +522,10 @@ struct spx_skp_serial_metadata *spx_skp_serial_md_copy(struct spx_skp_serial_met
         printf("malloc new_md failed\n");
         return NULL;
     }
-    strncpy(new_md->file, src_md->file, strlen(src_md->file));
+
+    int file_len = strlen(src_md->file);
+    strncpy(new_md->file, src_md->file, file_len);
+    *(new_md->file + file_len) = '\0';
     new_md->len = src_md->len;
     new_md->off = src_md->off;
     return new_md;
