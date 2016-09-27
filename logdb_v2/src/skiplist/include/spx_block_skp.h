@@ -37,6 +37,7 @@ extern "C" {
         SpxSkpCmpDelegate cmp_key;
         SpxSkpCmpDelegate cmp_value;
         SpxSkpFreeDelegate free_key;
+        pthread_mutex_t mutex;//mutex for spx_block_skp
     };
 
     //block_skp_list
@@ -66,8 +67,11 @@ extern "C" {
     int spx_skp_queue_lock();
     int spx_skp_queue_unlock();
 
-    //spx_skp_list method 
+    //config op
     struct spx_skp_idx *spx_skp_read_config();
+    int spx_skp_read_config_idx_cnt();
+    
+    //spx_skp_list method 
     struct spx_skp * spx_skp_list_get_push_queue(struct spx_skp_list *skp_list, char *skp_name, err_t *err);
     struct spx_skp * spx_skp_list_get(struct spx_skp_list *skp_list, char *skp_name, err_t *err);
     struct spx_block_skp * spx_block_skp_list_get(char *block_skp_name, spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, SpxSkpFreeDelegate free_key);

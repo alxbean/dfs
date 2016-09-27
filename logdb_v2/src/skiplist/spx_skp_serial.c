@@ -1276,6 +1276,7 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
             int new_right_key_len = spx_msg_b2i(new_block_mst->mapped + new_right_off);
             void *new_right_key = byte2key(new_block_mst->mapped + new_right_off + 4, new_right_key_len);
             g_spx_block_skp_node_serial_ctx.new_right_key = new_right_key;
+
             spx_skp_serial_un_map(new_block_mst);
         }
     } else {

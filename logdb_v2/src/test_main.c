@@ -30,6 +30,7 @@
 #include "logdb_tracker_configuration.h"
 #include "messagepack.h"
 #include "skiplist.h"
+#include "thread_pool.h"
 
 #define QUERY 0
 #define ADD 1
@@ -37,6 +38,7 @@
 #define UPDATE 3
 #define FrzCtxPoolSize 1024
 #define MsgpkTreeCtxPoolSize 1024
+#define BLOCK_SKP_WORKER_THREAD_SIZE 3
 
 static long response_set(struct pack_buffer *pb,  char **response);
 
@@ -175,6 +177,8 @@ int main(int argc, char **argv){/*{{{*/
         SpxLog2(log, SpxLogError, err, "spx_skp_serial_block_skp_thread_new failed");
         exit(err);
     }
+
+    thread_pool_init(spx_skp_read_config_idx_cnt());
 
     struct server_config * conf = (struct server_config *) spx_alloc_alone(sizeof(*conf), &err);    
     conf->ip = c->ip;

@@ -6,6 +6,8 @@ MSGPACK_SRC_PATH = ./messagepack/
 MSGPACK_HEADER_PATH = ./messagepack/include/
 SKIPLIST_SRC_PATH = ./skiplist/
 SKIPLIST_HEADER_PATH = ./skiplist/include/
+UTILS_SRC_PATH = ./utils/
+UTILS_HEADER_PATH = ./utils/
 TARGET = logdb_server
 TARGET_PATH = /usr/local/bin
 HEADER_TARGET_PATH = /usr/local/include/
@@ -16,7 +18,8 @@ CFLAG = -pipe -o0  -W -Wall -Werror -g \
 INC_PATH = -I/usr/local/include \
 			-I$(SPX_HEADER_PATH) \
 			-I$(MSGPACK_HEADER_PATH) \
-			-I$(SKIPLIST_HEADER_PATH)
+			-I$(SKIPLIST_HEADER_PATH) \
+			-I$(UTILS_HEADER_PATH)
 LIB_PATH = -L/usr/local/lib -lev -lpthread
 DEFS := 
 
@@ -47,12 +50,14 @@ endif
 SRC_FILE = $(wildcard *.c) \
 			$(wildcard $(SPX_SRC_PATH)/*.c) \
 			$(wildcard $(MSGPACK_SRC_PATH)/*.c) \
-			$(wildcard $(SKIPLIST_SRC_PATH)/*.c)
+			$(wildcard $(SKIPLIST_SRC_PATH)/*.c) \
+			$(wildcard $(UTILS_SRC_PATH)/*.c)
 
 HEADER_FILE = $(wildcard *.h) \
 			$(wildcard $(SPX_HEADER_PATH)/*.h) \
 			$(wildcard $(MSGPACK_HEADER_PATH)/*.h) \
-			$(wildcard $(SKIPLIST_HEADER_PATH)/*.h)
+			$(wildcard $(SKIPLIST_HEADER_PATH)/*.h) \
+			$(wildcard $(UTILS_HEADER_PATH)/*.h)
 
 SHARED_OBJS = $(patsubst %.c,%.o,$(SRC_FILE) )
 
