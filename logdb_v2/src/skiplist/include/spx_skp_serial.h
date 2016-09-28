@@ -59,14 +59,18 @@ extern "C" {
         void *old_right_key;
         void *new_left_key;
         void *new_right_key;
-    } g_spx_block_skp_node_serial_ctx;
+    };
+
+    //serial context
+    struct spx_block_skp_node_serial_context *spx_block_serial_context_new();
+    int spx_block_serial_context_free(struct spx_block_skp_node_serial_context **serial_ctx);
 
     //serial skiplist
     int spx_skp_serial(struct spx_skp *sl, SpxSkpO2BDelegate key2byte, SpxSkpO2BDelegate value2byte);
     int spx_skp_unserial(struct spx_skp *sl, SpxSkpB2ODelegate byte2key, SpxSkpB2ODelegate byte2value);
 
     //spx_block_skp_serial
-    int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index);
+    int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index, struct spx_block_skp_node_serial_context *serial_ctx);
     int spx_block_skp_unserial(struct spx_block_skp *block_skp);
     int spx_block_skp_node_key_print(struct spx_block_skp *block_skp);
 
