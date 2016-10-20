@@ -1,0 +1,65 @@
+/*************************************************************************
+    > File Name: block_skp_test.c
+    > Author: shuaixiang
+    > Mail: shuaixiang@yuewen.com
+    > Created Time: Mon 17 Oct 2016 02:39:40 PM CST
+ ************************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <pthread.h>
+
+#include "spx_types.h"
+#include "spx_string.h"
+#include "spx_defs.h"
+#include "spx_log.h"
+#include "spx_socket.h"
+#include "spx_env.h"
+#include "spx_nio.h"
+#include "spx_configurtion.h"
+#include "spx_module.h"
+#include "spx_job.h"
+#include "spx_task.h"
+#include "spx_notifier_module.h"
+#include "spx_network_module.h"
+#include "spx_task_module.h"
+#include "spx_alloc.h"
+
+#include "logdb_server.h"
+#include "logdb_tracker_configuration.h"
+#include "messagepack.h"
+#include "skiplist.h"
+#include "thread_pool.h"
+#include "time.h"
+
+ int main(int argc , char *argv[]){
+     spx_skp_type key_type = SKP_TYPE_STR;
+     spx_skp_type value_type = SKP_TYPE_MD;
+     clock_t start ,finish;
+     struct spx_skp_serial_metadata *meta = (struct spx_skp_serial_metadata *) malloc(sizeof(*meta));
+     memcpy(meta->file, "test", 4);
+     meta->off = 0;
+     meta->len = 0;
+
+     struct spx_block_skp *block_skp = spx_block_skp_new(key_type, cmp_str, value_type, cmp_md, "block_skp_test", NULL);
+     int count = atoi(argv[1]);
+     int mod = atoi(argv[2]);
+     start = clock();
+     int i = 0;
+     for (i = 0; i < count; i++){
+        char key[100];
+        int x = rand()%mod;
+        //printf("id=%d x=%d\n", i, x);
+        sprintf(key, "%d", x);
+        spx_block_skp_insert(block_skp, key, meta);
+     }
+
+     finish = clock();
+     free(meta);
+     printf("time cost: %.0fms for count:%d\n", (double)(((finish - start)*1000)/CLOCKS_PER_SEC), count);
+
+     return 0;
+ }
+
+

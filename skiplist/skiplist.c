@@ -12,8 +12,9 @@
 #include <string.h>
 
 #include "skiplist.h"
+#include "time.h"
 
-#define MAX_LEVEL 10
+#define MAX_LEVEL 16
 #define NewNode(n) ((struct skp_node*)malloc(sizeof(struct skp_node)+n*sizeof(struct skp_node*)))
 #define NewValue() ((struct skp_node_value*)malloc(sizeof(struct skp_node_value)))
 #define FILE_NAME_LENGTH 100
@@ -414,17 +415,34 @@ static char * getValue(const void *value, const int valueLen){
 int main(){
       //struct skiplist * sl = unserial_skiplist("./index/test.idx");
     struct skiplist * sl = create_skiplist(cmp, cmp, "test");
-    char key[] = "666";
-    char value[] = "fff";
-    insert_node(sl, 0, key, 0, value); 
-    char key1[] = "222";
-    char value1[] = "bb";
-    insert_node(sl, 0, key1, 0, value1);
-    char key2[] = "333";
-    char value2[] = "cc";
-    insert_node(sl, 0, key2, 0, value2);
-    
-    print_skiplist(sl);
+    clock_t start, finish;
+    start = clock();
+
+    for (int i = 0; i < 1000000; i++){
+        int x = (rand()%1000000) + 1;
+        //if (i%1000 == 0)
+        //   printf("x: %d\n", x);
+        int *key = (int *)malloc(sizeof(int));
+        int *value = (int *)malloc(sizeof(int));
+        *key = x;
+        *value = x;
+        insert_node(sl, 0, key, 0, value);
+    }
+
+    finish = clock();
+    printf("time cost: %f s\n", (double)(finish - start)/CLOCKS_PER_SEC);
+
+    //char key[] = "666";
+    //char value[] = "fff";
+    //insert_node(sl, 0, key, 0, value); 
+    //char key1[] = "222";
+    //char value1[] = "bb";
+    //insert_node(sl, 0, key1, 0, value1);
+    //char key2[] = "333";
+    //char value2[] = "cc";
+    //insert_node(sl, 0, key2, 0, value2);
+    //
+    //print_skiplist(sl);
 //    char startKey[] = "000";
 //    char endKey[] = "111";
 //
@@ -455,18 +473,18 @@ int main(){
 //    char const * file = "sl.data";
 //    serialSL(sl, file);
  //   struct skiplist * sl = unserialSL(file);
-    printf("----------------query----------\n");
-    char k[] = "333";
+    //printf("----------------query----------\n");
+    //char k[] = "333";
 
-    struct skp_node * node = find_node(sl, k);
-    printf("%s\n", (char *) node->value->value); 
-    char delKey[] = "333";
-    delete_node(sl, delKey);
-    print_skiplist(sl);
-    node = find_node(sl, k);
-    if(NULL == node)
-        printf("not found~!\n");
-    else
-        printf("%s\n", (char *) node->value->value); 
+    //struct skp_node * node = find_node(sl, k);
+    //printf("%s\n", (char *) node->value->value); 
+    //char delKey[] = "333";
+    //delete_node(sl, delKey);
+    //print_skiplist(sl);
+    //node = find_node(sl, k);
+    //if(NULL == node)
+    //    printf("not found~!\n");
+    //else
+    //    printf("%s\n", (char *) node->value->value); 
 }
 
