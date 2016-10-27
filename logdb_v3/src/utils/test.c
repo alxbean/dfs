@@ -9,7 +9,7 @@
 #include "time.h"
 #include <unistd.h>
 
-int count = 100000;
+int count = 10000;
 void *thread_push(void *q){
     struct logdb_queue *queue = (struct logdb_queue *) q;
     int i;
@@ -18,7 +18,7 @@ void *thread_push(void *q){
         *x = i;
         logdb_queue_push(queue, x);
         printf("pid:%u push:%d queue size:%zd\n", (unsigned int)pthread_self(), *x, queue->size);
-        sleep(1);
+        //sleep(1);
     }
 
     return NULL;
@@ -32,7 +32,7 @@ void *thread_pop(void *q){
             printf("pid:%u pop:%d queue size:%zd\n", (unsigned int)pthread_self(), *x, queue->size);
             free(x);
         }
-        sleep(1);
+        //sleep(1);
     }
 
     return NULL;
@@ -46,20 +46,20 @@ void *thread_pop(void *q){
      int i;
 
      start = clock();
-     for (i = 0; i < 12; i++){
+     for (i = 0; i < 5; i++){
         pthread_create(&push_tid[i], NULL, (void *) thread_push, test_queue); 
      }
 
-     for (i = 0; i < 11; i++){
+     for (i = 0; i < 5; i++){
         pthread_create(&pop_tid[i], NULL, (void *) thread_pop, test_queue); 
      }
-        sleep(1);
+        //sleep(1);
 
-     for (i = 0; i< 12; i++){
+     for (i = 0; i< 5; i++){
         pthread_join(push_tid[i], NULL);
      }
 
-     for (i = 0; i< 11; i++){
+     for (i = 0; i< 5; i++){
         pthread_join(pop_tid[i], NULL);
      }
      finish = clock();
