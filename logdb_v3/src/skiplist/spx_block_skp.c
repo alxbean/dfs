@@ -645,7 +645,7 @@ static int spx_block_skp_insert(struct spx_block_skp *block_skp, void * key, voi
     int64_t len = 0;
 
     int i;
-    //find the nodes to insert after
+    //find the nodes to insert
     for (i = block_skp->level; i >= 0; i--){
         while ((NULL == target_node) && ((cur_node = pre_node->next_node[i]) != NULL)){
             if ((cur_node->left_key != NULL) && (block_skp->cmp_key(key, cur_node->left_key) >= 0))

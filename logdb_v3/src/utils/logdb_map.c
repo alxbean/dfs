@@ -48,8 +48,14 @@ static int logdb_map_node_destroy(struct logdb_map_node** p_node, FreeDelegate k
         return -1;
     }
 
-    key_free(node->key);
-    value_free(node->value);
+    if (NULL == key_free)
+        free(node->key);
+    else
+        key_free(node->key);
+    if (NULL == value_free)
+        free(node->value)
+    else
+        value_free(node->value);
     node->key = NULL;
     node->value = NULL;
     node->next_node = NULL;

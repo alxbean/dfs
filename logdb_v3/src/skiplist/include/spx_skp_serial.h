@@ -44,12 +44,12 @@ extern "C" {
         int64_t len;
     };
 
-    struct spx_skp_serial_metadata_list_node{
+    struct spx_skp_serial_metadata_list_node {
         struct spx_skp_serial_metadata *md;
         struct spx_skp_serial_metadata_list_node *next_md;
     };
 
-    struct spx_skp_serial_metadata_list{
+    struct spx_skp_serial_metadata_list {
         struct spx_skp_serial_metadata_list_node *head;
         struct spx_skp_serial_metadata_list_node *tail;
     };

@@ -23,11 +23,11 @@ extern "C" {
         void *right_key;
         int64_t index;
         int level;
-//        int size;//currently, is not necessary
+//      int size;//currently, is not necessary
         struct spx_block_skp_node *next_node[0];
     };
 
-    struct spx_block_skp{
+    struct spx_block_skp {
         char name[SpxSkpNameSize];
         struct spx_block_skp_node *head;
         int level;
