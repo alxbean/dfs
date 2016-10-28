@@ -1,0 +1,115 @@
+/*************************************************************************
+    > File Name: test.c
+    > Author: shuaixiang
+    > Mail: shuaixiang@yuewen.com
+    > Created Time: Thu 20 Oct 2016 05:29:20 PM CST
+ ************************************************************************/
+
+#include "logdb_queue.h"
+#include "logdb_map.h"
+#include "time.h"
+#include <unistd.h>
+
+int cmp_int(const void *a, const void *b){/*{{{*/
+    return *((int *)a) - *((int *)b);
+}/*}}}*/
+
+void free_key(void* key){
+    free(key);
+}
+
+void free_value(void* value){
+    free(value);
+}
+
+int main(){
+    struct logdb_map* new_map = logdb_map_new(cmp_int, free_key, free_value); 
+    int i;
+    for (i = 0; i < 100; i++){
+        int *key = (int*)malloc(sizeof(*key));
+        int *value = (int*)malloc(sizeof(*key));
+        *key = i;
+        *value = i;
+        logdb_map_insert(new_map, key, value);
+    }
+
+    for (i = 0; i < 20; i++){
+        int *key = (int*)malloc(sizeof(*key));
+        *key = rand()%100;
+        printf("remove key: %d\n", *key);
+        logdb_map_remove(new_map, key);
+    }
+
+    for (i = 0; i < 100; i++){
+        int *key = (int*)malloc(sizeof(*key));
+        *key = i;
+        int *v = (int*)logdb_map_get(new_map, key);
+        //sleep(1);
+        if (NULL == v){
+            printf("not found or value is NULL\n");
+        } else {
+            printf("value:%d\n", *v);
+        }
+    }
+    logdb_map_destroy(&new_map);
+}
+
+//int count = 10000;/*{{{*/
+//void *thread_push(void *q){
+//    struct logdb_queue *queue = (struct logdb_queue *) q;
+//    int i;
+//    for (i = 0; i < count; i++){
+//        int *x = (int *)malloc(sizeof(int));
+//        *x = i;
+//        logdb_queue_push(queue, x);
+//        printf("pid:%u push:%d queue size:%zd\n", (unsigned int)pthread_self(), *x, queue->size);
+//        //sleep(1);
+//    }
+//
+//    return NULL;
+//}
+//
+//void *thread_pop(void *q){
+//    struct logdb_queue *queue = (struct logdb_queue *) q;
+//    while (!logdb_queue_is_empty(queue)){
+//        int *x = (int *)logdb_queue_pop(queue);
+//        if (x != NULL){
+//            printf("pid:%u pop:%d queue size:%zd\n", (unsigned int)pthread_self(), *x, queue->size);
+//            free(x);
+//        }
+//        //sleep(1);
+//    }
+//
+//    return NULL;
+//}
+//
+//
+// int main(){
+//     struct logdb_queue *test_queue = logdb_queue_new("test_queue");
+//     clock_t start ,finish;
+//     pthread_t push_tid[10], pop_tid[10];
+//     int i;
+//
+//     start = clock();
+//     for (i = 0; i < 5; i++){
+//        pthread_create(&push_tid[i], NULL, (void *) thread_push, test_queue); 
+//     }
+//
+//     for (i = 0; i < 5; i++){
+//        pthread_create(&pop_tid[i], NULL, (void *) thread_pop, test_queue); 
+//     }
+//        //sleep(1);
+//
+//     for (i = 0; i< 5; i++){
+//        pthread_join(push_tid[i], NULL);
+//     }
+//
+//     for (i = 0; i< 5; i++){
+//        pthread_join(pop_tid[i], NULL);
+//     }
+//     finish = clock();
+//     
+//     printf("push and pop: %.0fms for count:%d\n", (double)(((finish - start)*1000)/CLOCKS_PER_SEC), count);
+//     logdb_queue_destroy(&test_queue);
+// }/*}}}*/
+

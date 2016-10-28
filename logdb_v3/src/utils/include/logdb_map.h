@@ -13,8 +13,7 @@ extern "C" {
 #endif
     #include <stdio.h>
     #include <stdlib.h>
-
-    typedef int (*CmpDelegate)(const void *, const void *);
+    #include "logdb_types.h"
 
     struct logdb_map_node {
         void* key;
@@ -24,13 +23,19 @@ extern "C" {
 
     struct logdb_map {
         size_t size;
-        struct logdb_queue_node *head;
-        struct logdb_queue_node *tail;
+        struct logdb_map_node *head;
+        struct logdb_map_node *tail;
         CmpDelegate cmp;
+        FreeDelegate key_free;
+        FreeDelegate value_free;
     };
 
-    struct logdb_map* logdb_map_new();
+    struct logdb_map* logdb_map_new(CmpDelegate cmp, FreeDelegate key_free, FreeDelegate value_free);
     void* logdb_map_get(struct logdb_map* map, void* key);
+    struct logdb_map_node* logdb_map_node_get(struct logdb_map* map, void* key);
+    int logdb_map_insert(struct logdb_map* map, void* key, void* value);
+    int logdb_map_remove(struct logdb_map* map, void* key);
+    int logdb_map_destroy(struct logdb_map** p_map);
 
 #ifdef __cplusplus
 }

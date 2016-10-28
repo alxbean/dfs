@@ -14,6 +14,7 @@ extern "C" {
     #include <stdio.h>
     #include <stdlib.h>
     #include <pthread.h>
+    #include "logdb_types.h"
 
     struct logdb_queue_node {
         void* value;
@@ -26,6 +27,7 @@ extern "C" {
         pthread_mutex_t mutex;
         struct logdb_queue_node *head;
         struct logdb_queue_node *tail;
+        //FreeDelegate value_free;
     };
 
     struct logdb_queue* logdb_queue_new(char* name);

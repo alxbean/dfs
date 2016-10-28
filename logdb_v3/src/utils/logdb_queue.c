@@ -73,6 +73,8 @@ int logdb_queue_destroy(struct logdb_queue** p_queue){/*{{{*/
         logdb_queue_pop(queue);
 
     free(queue);
+    *p_queue = NULL;
+
     return 0;
 }/*}}}*/
 
@@ -106,19 +108,14 @@ int logdb_queue_push(struct logdb_queue* queue, void* value){/*{{{*/
     }
 
     pthread_mutex_lock(&queue->mutex);
-    if (NULL == queue->head && NULL == queue->tail){
+    if (NULL == queue->head){
         queue->head = new_node;
         queue->tail = new_node;
         queue->size++;
-    } else if (queue->tail != NULL){
+    } else {
         queue->tail->next_node = new_node;
         queue->tail = new_node;
         queue->size++;
-    } else {
-        printf("broken queue\n");
-        logdb_queue_node_destroy(&new_node);
-        pthread_mutex_unlock(&queue->mutex);
-        return -1;
     }
     pthread_mutex_unlock(&queue->mutex);
 
