@@ -30,7 +30,7 @@ extern "C" {
         FreeDelegate value_free;
     };
 
-    struct logdb_map* logdb_map_new(CmpDelegate cmp, FreeDelegate key_free, FreeDelegate value_free);
+    struct logdb_map* logdb_map_new(CmpDelegate cmp_key, FreeDelegate key_free, FreeDelegate value_free);
     void* logdb_map_get(struct logdb_map* map, void* key);
     struct logdb_map_node* logdb_map_node_get(struct logdb_map* map, void* key);
     int logdb_map_insert(struct logdb_map* map, void* key, void* value);

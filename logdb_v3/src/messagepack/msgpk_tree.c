@@ -319,7 +319,7 @@ struct spx_skp_serial_metadata_list *msgpk_tree_query(struct msgpk_object * obj)
 }/*}}}*/
 
 char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){/*{{{*/
-    struct spx_skp_idx *tmp_idx = spx_skp_read_config(); 
+    struct spx_block_skp_index *tmp_idx = spx_block_skp_load_index(); 
     err_t err = 0;
     if (NULL == tmp_idx){
         printf("read index config error\n");

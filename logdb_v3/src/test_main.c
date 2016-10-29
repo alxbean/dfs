@@ -178,7 +178,7 @@ int main(int argc, char **argv){/*{{{*/
         exit(err);
     }
 
-    thread_pool_init(spx_skp_read_config_idx_cnt());
+    thread_pool_init(spx_block_skp_count_config_index());
 
     struct server_config * conf = (struct server_config *) spx_alloc_alone(sizeof(*conf), &err);    
     conf->ip = c->ip;

@@ -6,6 +6,7 @@
  ************************************************************************/
 #include "spx_skp.h" 
 #include "spx_block_skp.h"
+#include "spx_block_skp_config.h"
 #include "spx_block_skp_new.h"
 #include "spx_skp_serial.h"
 

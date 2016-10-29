@@ -11,16 +11,16 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    #include "logdb_map.h"
+    #include "logdb_queue.h"
 
-    struct spx_block_skp_config{
+    struct spx_block_skp_index{
         char *idx;
         char type;
-        struct spx_skp_idx *next_idx;
-    };
+        struct spx_block_skp_index *next_idx;
+    }g_spx_block_skp_idx_head;
 
-    struct logdb_map* spx_block_skp_config_init();
-    int spx_block_skp_config_idx_cnt();
+    struct spx_block_skp_index* spx_block_skp_load_index();
+    int spx_block_skp_count_config_index();
 
 #ifdef __cplusplus
 }

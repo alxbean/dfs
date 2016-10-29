@@ -65,7 +65,7 @@ static int logdb_map_node_destroy(struct logdb_map_node** p_node, FreeDelegate k
     return 0;
 }/*}}}*/
 
-struct logdb_map* logdb_map_new(CmpDelegate cmp, FreeDelegate key_free, FreeDelegate value_free){/*{{{*/
+struct logdb_map* logdb_map_new(CmpDelegate cmp_key, FreeDelegate key_free, FreeDelegate value_free){/*{{{*/
     struct logdb_map* new_map = (struct logdb_map*) malloc(sizeof(*new_map));
     if (NULL == new_map){
         printf("new_map is NULL in logdb_map_new\n");
