@@ -5,6 +5,9 @@
     > Created Time: Fri 28 Oct 2016 04:35:11 PM CST
 ************************************************************************/
 #include "spx_block_skp_common.h"
+#include "spx_message.h"
+#include "spx_block_skp_serial.h"
+
 /*
  * byte transform
  */
@@ -128,37 +131,6 @@ void *spx_block_skp_common_byte2double(ubyte_t *b, int obj_len){/*{{{*/
 }/*}}}*/
 
 //struct spx_skp_serial_metadata
-static ubyte_t * spx_skp_serial_m2b(struct spx_skp_serial_metadata *md, int *byteLen){/*{{{*/
-    int filename_len = strlen(md->file);
-    int size  = 1 + filename_len + 8 + 8; 
-    ubyte_t * b = (ubyte_t *)calloc(1, sizeof(ubyte_t) * size);    
-    *b = (filename_len & 0xff);
-    memcpy(b + 1, md->file, filename_len);
-    spx_msg_l2b((b + 1 + filename_len), md->off);
-    spx_msg_l2b((b + 1 + filename_len + 8), md->len);
-
-    if (NULL != byteLen)
-        *byteLen = size;
-    return b;
-}/*}}}*/
-
-static struct spx_skp_serial_metadata *spx_skp_serial_b2m(ubyte_t *b){/*{{{*/
-    struct spx_skp_serial_metadata *md= (struct spx_skp_serial_metadata*) calloc(1, sizeof(struct spx_skp_serial_metadata));
-    if(NULL == md){
-        printf("malloc struct spx_skp_serial_metadata failed");
-        return NULL;
-    }
-
-    char filename_len = *b; 
-    int64_t off = spx_msg_b2l(b + 1 + filename_len);
-    int64_t len = spx_msg_b2l(b + 1 + filename_len + 8);
-
-    memcpy(md->file, (b + 1), filename_len);
-    *(md->file + filename_len) = '\0';
-    md->len = len;
-    md->off = off;
-    return md;
-}/*}}}*/
 
 ubyte_t * spx_block_skp_common_md2byte(const void * i, int *byte_len){/*{{{*/
     struct spx_skp_serial_metadata *md = (struct spx_skp_serial_metadata *)i; 
@@ -185,8 +157,9 @@ void *spx_block_skp_common_byte2str(ubyte_t *b, int obj_len){/*{{{*/
     return buf;
 }/*}}}*/
 
+
 /*
- * public cmp method
+ *cmp method
  */
 
 int cmp_md(const void *a, const void *b){/*{{{*/
@@ -218,26 +191,4 @@ int cmp_md(const void *a, const void *b){/*{{{*/
         }
     }
 }/*}}}*/
-
-int cmp_int(const void *a, const void *b){/*{{{*/
-    return *((int *)a) - *((int *)b);
-}/*}}}*/
-
-int cmp_long(const void *a, const void *b){/*{{{*/
-    return *(long *)a - *(long *)b;
-}/*}}}*/
-
-int cmp_float(const void *a, const void *b){/*{{{*/
-    return *(float *)a - *(float *)b;
-}/*}}}*/
-
-int cmp_double(const void *a, const void *b){/*{{{*/
-    return *(double *)a - *(double *)b;
-}/*}}}*/
-
-int cmp_str(const void *a, const void *b){/*{{{*/
-    return strcmp((char *)a, (char *)b);
-}/*}}}*/
-
-
 

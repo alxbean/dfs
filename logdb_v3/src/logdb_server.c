@@ -461,9 +461,9 @@ spx_private void Reciver(struct ev_loop *loop, ev_io *watcher, int revents){/*{{
             SpxLog2(log, SpxLogError, err, "set main client_socket nonblock is fail.");
         }
 
-        printf("\n----------------CLIENT:%d START CTX:%d-----------------------\n", client_sock, GetCTXCount());
+        //printf("\n----------------CLIENT:%d START CTX:%d-----------------------\n", client_sock, GetCTXCount());
         struct server_context * ctx = CTXPop();
-        printf("\n----------------CLIENT:%d POP CTX:%d-----------------------\n", client_sock, GetCTXCount());
+        //printf("\n----------------CLIENT:%d POP CTX:%d-----------------------\n", client_sock, GetCTXCount());
 
         if(NULL != ctx){
             ctx->fd = client_sock;
@@ -514,10 +514,10 @@ spx_private void ReciveRequest(EV_P_ ev_async *watcher, int revents){/*{{{*/
     }
 
     if(READ_REQUEST == ctx->life_cycle){
-        printf("---------------ReadRequest-------------\n");
-        printf("req_size:%d\n", (int)ctx->req_size);
+        //printf("---------------ReadRequest-------------\n");
+        //printf("req_size:%d\n", (int)ctx->req_size);
         err_t err = ReciveRequest_GetRequest_ReadRequest(ctx->fd, ctx->request, &ctx->req_len, ctx->req_size);        
-        printf("read request complete\n" );
+        //printf("read request complete\n" );
         if(0 == err){
             ctx->life_cycle = PARSE_REQUEST;
             RegisterAayncWatcher(&ctx->async_watcher, ParserRequest, ctx);
@@ -635,7 +635,7 @@ spx_private void ParserRequest(EV_P_ ev_async *watcher, int revents){/*{{{*/
         return; 
     }
 
-   printf("\n----------------CLIENT:%d xxxxxxxxxxxxxxxxxx CTX:%d-----------------------\n", ctx->fd, GetCTXCount());
+   //printf("\n----------------CLIENT:%d xxxxxxxxxxxxxxxxxx CTX:%d-----------------------\n", ctx->fd, GetCTXCount());
    if(NULL != ctx->request){
         //msg_print(ctx->request, ctx->req_size);
        
@@ -683,7 +683,7 @@ spx_private void SendResponse(EV_P_ ev_async *watcher, int revents){/*{{{*/
 
 spx_private void RequestFinish(struct server_context *ctx){
         CloseCTX(ctx);
-        printf("----------------CLIENT:%d SUCCESS CTX:%d-----------------------\n\n\n", ctx->fd, GetCTXCount());
+        //printf("----------------CLIENT:%d SUCCESS CTX:%d-----------------------\n\n\n", ctx->fd, GetCTXCount());
 }
 
 spx_private void RequestException(struct server_context * ctx, void (*handle)(int client)){

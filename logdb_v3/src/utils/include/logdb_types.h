@@ -13,16 +13,18 @@ extern "C" {
 #endif
     #include <stdio.h>
     #include <stdlib.h>
+    #include "spx_types.h"
 
     typedef int (*CmpDelegate)(const void *, const void *);
     typedef void (*FreeDelegate)(void *key);
+    typedef void *(*CopyDelegate)(void *);
 
-    #ifndef bool_t
-        typedef enum {
-            false = 0,
-            true = 1
-        }bool_t;
-    #endif
+    //#ifndef bool_t
+    //    typedef enum {
+    //        false = 0,
+    //        true = 1
+    //    }bool_t;
+    //#endif
 
 #ifdef __cplusplus
 }

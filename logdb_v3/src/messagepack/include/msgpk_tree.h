@@ -14,6 +14,7 @@ extern "C" {
 #endif
 #include "msgpk_define.h"
 #include "skiplist.h"
+#include "logdb_skp.h"
 
     struct spx_skp_serial_metadata_list *msgpk_tree_query(struct msgpk_object * obj);
     char * msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request);

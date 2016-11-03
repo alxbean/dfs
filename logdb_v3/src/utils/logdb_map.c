@@ -5,7 +5,6 @@
     > Created Time: Thu 27 Oct 2016 10:18:43 AM CST
 ************************************************************************/
 #include "string.h"
-
 #include "logdb_map.h"
 
 static struct logdb_map_node* logdb_map_node_new(void* key, void* value);
@@ -53,7 +52,7 @@ static int logdb_map_node_destroy(struct logdb_map_node** p_node, FreeDelegate k
     else
         key_free(node->key);
     if (NULL == value_free)
-        free(node->value)
+        free(node->value);
     else
         value_free(node->value);
     node->key = NULL;
@@ -75,7 +74,7 @@ struct logdb_map* logdb_map_new(CmpDelegate cmp_key, FreeDelegate key_free, Free
     new_map->head = NULL;
     new_map->tail = NULL;
     new_map->size = 0;
-    new_map->cmp = cmp;
+    new_map->cmp = cmp_key;
     new_map->key_free = key_free;
     new_map->value_free = value_free;
 

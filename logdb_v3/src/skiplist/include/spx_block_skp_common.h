@@ -12,7 +12,7 @@
 extern "C" {
 #endif
     #include "spx_types.h"
-    #include "spx_skp_serial.h"
+    #include "logdb_types.h"
 
     //transform method
     ubyte_t* spx_block_skp_common_int2byte(const void* i, int* byte_len);
@@ -35,11 +35,7 @@ extern "C" {
 
     //cmp method
     int cmp_md(const void *a, const void *b);
-    int cmp_int(const void *a, const void *b);
-    int cmp_long(const void *a, const void *b);
-    int cmp_float(const void *a, const void *b);
-    int cmp_double(const void *a, const void *b);
-    int cmp_str(const void *a, const void *b);
+
 
 #ifdef __cplusplus
 }

@@ -133,6 +133,7 @@ static void *thread_routine(void *arg){/*{{{*/
         (*(task->process))(task->arg);
         free(task);
         task = NULL;
+        printf("thread task size:%d\n", g_thread_pool->cur_queue_size);
     }
 }/*}}}*/
 

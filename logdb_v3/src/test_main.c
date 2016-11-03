@@ -59,13 +59,13 @@ static long response_set(struct pack_buffer *pb,  char **response){/*{{{*/
 long server_handler(size_t req_size, char * request, char **response){/*{{{*/
    // printf("\n=====================unpacking==================\n");
     struct msgpk_object *obj = msgpk_message_unpacker((ubyte_t*)request, req_size);
-    msgpk_tree_print_json(obj);
+    //msgpk_tree_print_json(obj);
     //printf("\n====================printTree==================\n");
     //msgpk_tree_print(obj, 0);
     //printf("\n=====================request==================\n");
     //msgpk_print_hex((ubyte_t *)request, req_size);
     //printf("\n================findNode==================\n");
-    printf("\n================A Request==================\n");
+    //printf("\n================A Request==================\n");
 
     if (OBJ_TYPE_EXT != obj->obj_type){
         printf("obj is not a OBJ_TYPE_EXT\n");
@@ -114,7 +114,7 @@ long server_handler(size_t req_size, char * request, char **response){/*{{{*/
 
         return response_set(pb, response);
     } else if (ADD == obj->key.int8_val){
-        printf("ADD\n");
+        //printf("ADD\n");
         char *unid = msgpk_tree_add(obj, req_size, request);
         *response = unid;
         msgpk_tree_free(obj);
@@ -149,10 +149,10 @@ int main(int argc, char **argv){/*{{{*/
     }
 
     err_t err = 0;
-    string_t confname = spx_string_new(argv[1], &err);
-    if(NULL == confname){
+    string_t conf_name = spx_string_new(argv[1], &err);
+    if(NULL == conf_name){
         SpxLog2(log,SpxLogError,err,
-                "new the confname is fail."
+                "new the conf_name is fail."
                 "and will exit...");
         exit(err);
     }
@@ -161,14 +161,14 @@ int main(int argc, char **argv){/*{{{*/
     spx_configurtion_parser(log,\
                             logdb_tracker_config_before_handle,\
                             NULL,\
-                            confname,\
+                            conf_name,\
                             logdb_tracker_config_line_parser_handle,\
                             &err);
     if(NULL == c){
         SpxLogFmt2(log,SpxLogError,err,
                    "parser the configurtion is fail.file name:%s."
                    "and will exit...",
-                   confname);
+                   conf_name);
         exit(err);
     }
 
@@ -178,7 +178,9 @@ int main(int argc, char **argv){/*{{{*/
         exit(err);
     }
 
-    thread_pool_init(spx_block_skp_count_config_index());
+    spx_block_skp_task_queue_init();
+    //thread_pool_init(spx_block_skp_count_config_index());
+    thread_pool_init(20);
 
     struct server_config * conf = (struct server_config *) spx_alloc_alone(sizeof(*conf), &err);    
     conf->ip = c->ip;

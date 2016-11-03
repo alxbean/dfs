@@ -5,8 +5,10 @@
 > Created Time: Mon 07 Sep 2015 03:13:11 AM UTC
 ************************************************************************/
 #include <ev.h>
+#include <time.h>
 #include "spx_block_skp.h"
-#include "spx_skp_serial.h"
+#include "spx_block_skp_config.h"
+#include "spx_block_skp_serial.h"
 #include "spx_string.h"
 #include "spx_log.h"
 #include "thread_pool.h"
@@ -16,29 +18,14 @@
 
 #define NewBlockNode(n) ((struct spx_block_skp_node *) calloc(1, sizeof(struct spx_block_skp_node) + n*sizeof(struct spx_block_skp_node*)))
 
-pthread_mutex_t g_skp_queue_mutex = PTHREAD_MUTEX_INITIALIZER;//mutex for spx_skp_queue 
-
-//spx_skp_queue
-static struct spx_skp_queue_node *spx_skp_queue_node_new(struct spx_skp *skp);
-static int spx_skp_queue_push(struct spx_skp *skp);
-static int spx_skp_queue_node_free(struct spx_skp_queue_node **node_ptr);
-static struct spx_skp *spx_skp_queue_pop();
-
-//spx_skp_list
-static int spx_skp_list_node_free(struct spx_skp_list_node **node_ptr);
-
 //block_skp
 static int spx_block_skp_node_free(struct spx_block_skp *block_skp, struct spx_block_skp_node *block_node);
-static struct spx_block_skp * spx_block_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, const char * block_skp_name, SpxSkpFreeDelegate free_key);
-static int spx_block_skp_destory(struct spx_block_skp **p_block_skp);
 static int spx_block_skp_insert(struct spx_block_skp * block_skp, void * key, void *value);
 
-//block_skp event
+//block task
 static void spx_block_skp_handler(void *arg);
-static void spx_block_skp_event_insert(void *arg);
-static void spx_block_skp_queue_periodic_check_cb(struct ev_loop *loop, ev_periodic *w, int revents);
+static void spx_block_skp_insert_task(void *arg);
 
-static struct ev_loop * g_skp_block_loop = NULL;
 
 /*
  * private method
@@ -75,439 +62,6 @@ static int spx_block_skp_node_free(struct spx_block_skp *block_skp, struct spx_b
     free(block_node);// free skp_node
 
     return 0;
-}/*}}}*/
-
-/*
- *spx_skp_queue method 
- */
-
-int spx_skp_queue_lock(){/*{{{*/
-    return pthread_mutex_lock(&g_skp_queue_mutex);
-}/*}}}*/
-
-int spx_skp_queue_unlock(){/*{{{*/
-    return pthread_mutex_unlock(&g_skp_queue_mutex);
-}/*}}}*/
-
-static struct spx_skp_queue_node *spx_skp_queue_node_new(struct spx_skp *skp){/*{{{*/
-    if (NULL == skp){
-        printf("warning: the param skp in spx_skp_queue_node_new is NULL\n");
-    }
-
-    struct spx_skp_queue_node *q_node = (struct spx_skp_queue_node *) malloc(sizeof(*q_node));
-    if (NULL == q_node){
-        printf("malloc q_node failed\n");
-        return NULL;
-    }
-
-    q_node->next_queue_node = NULL;
-    q_node->skp = skp;
-    return q_node;
-}/*}}}*/
-
-static int spx_skp_queue_node_free(struct spx_skp_queue_node **node_ptr){/*{{{*/
-    if (NULL == node_ptr){
-        printf("node_ptr in spx_skp_queue_node_free is NULL\n");
-        return -1;
-    }
-
-    struct spx_skp_queue_node *q_node = *node_ptr;
-    if (NULL == q_node){
-        printf("q_node in spx_skp_queue_node_free is NULL\n");
-        return -1;
-    }
-
-    q_node->skp = NULL;
-    q_node->next_queue_node = NULL;
-
-    free(q_node);
-    *node_ptr = NULL;
-
-    return 0;
-}/*}}}*/
-
-static int spx_skp_queue_push(struct spx_skp *skp){/*{{{*/
-    if (NULL == skp){
-        printf("spx_skp_queue_push skp is NULL\n");
-        return -1;
-    }
-
-    struct spx_skp_queue *skp_queue = &g_spx_skp_queue;
-    if (NULL == skp_queue){
-        printf("a fatal error in spx_skp_queue_push\n");
-        return -1;
-    }
-
-    struct spx_skp_queue_node *new_node = spx_skp_queue_node_new(skp);
-
-    spx_skp_queue_lock();
-    if (NULL == skp_queue->tail){
-        skp_queue->head = new_node;
-        skp_queue->tail = new_node;
-    } else {
-        skp_queue->tail->next_queue_node = new_node;
-        skp_queue->tail = new_node;
-    }
-
-    spx_skp_queue_unlock();
-
-    return 0;
-}/*}}}*/
-
-static struct spx_skp *spx_skp_queue_pop(){/*{{{*/
-    struct spx_skp_queue *skp_queue = &g_spx_skp_queue;
-    struct spx_skp *skp = NULL;
-
-    if (NULL == skp_queue){
-        printf("a fatal error in spx_skp_queue_pop\n");
-        return NULL;
-    }
-
-
-    if (NULL == skp_queue->head){
-        printf("skp_queue is empty\n");
-    } else {
-        skp = skp_queue->head->skp;
-        if (NULL == skp){
-            printf("pop skp is NULL, if this msg print, HAHA, not possible, go and check skp_queue\n");
-            return NULL;
-        }
-
-        spx_skp_queue_lock();
-        struct spx_skp_queue_node *head2free = skp_queue->head;
-        skp_queue->head = skp_queue->head->next_queue_node;
-        if (NULL == skp_queue->head)
-            skp_queue->tail = NULL;
-        spx_skp_queue_unlock();
-        spx_skp_queue_node_free(&head2free);
-    }
-
-    return skp;
-}/*}}}*/
-
-struct spx_skp_list *spx_skp_queue_visit(){/*{{{*/
-    struct spx_skp_queue *skp_queue = &g_spx_skp_queue;
-    if (NULL == skp_queue){
-        printf("a fatal error in spx_skp_queue_pop\n");
-        return NULL;
-    }
-
-    struct spx_skp_list *skp_list = spx_skp_list_new();
-    struct spx_skp_queue_node *skp_queue_visit_node = skp_queue->head;
-    while (skp_queue_visit_node != NULL){
-        spx_skp_list_add(skp_list, skp_queue_visit_node->skp);
-        skp_queue_visit_node = skp_queue_visit_node->next_queue_node;
-    }
-
-    return skp_list;
-}/*}}}*/
-
-/*
- *index config operation
- */
-//read config and init skp_name
-struct spx_skp_idx * spx_skp_read_config()/*{{{*/
-{
-    if (g_spx_skp_idx_head.next_idx == NULL){
-        FILE *fp = fopen(SpxSkpIndexConf, "r");
-        if (NULL == fp){
-            printf("open %s failed\n", SpxSkpIndexConf);
-            return NULL;
-        }
-
-        char line[100];
-        struct spx_skp_idx *tmp_idx = &g_spx_skp_idx_head;
-        while(fgets(line, sizeof(line), fp)){
-            if('#' != *line && '\n' != *line){
-                int i = 0;
-                for(i = 0; i < (int)strlen(line); i++){
-                    if( *(line + i) == ':')
-                    break;
-                }
-
-                struct spx_skp_idx * new_idx = (struct spx_skp_idx *) malloc(sizeof(struct spx_skp_idx));           
-                new_idx->next_idx = NULL;
-                new_idx->index = (char *) malloc(sizeof(char) * (i + 1));
-                strncpy(new_idx->index, line, i);
-                *(new_idx->index + i) = '\0';
-                if (!strcmp((line + i + 1), "string\n")){
-                    new_idx->type = 0;  
-                } else if(!strcmp((line + i + 1), "int\n")){
-                    new_idx->type = 1;
-                } else if(!strcmp((line + i + 1), "long\n")){
-                    new_idx->type = 2;
-                } else{
-                    new_idx->type = -1;
-                }
-
-                tmp_idx->next_idx = new_idx; 
-                tmp_idx = new_idx;
-            }
-        }
-    }
-
-    return &g_spx_skp_idx_head;
-}/*}}}*/
-
-//config index count
-int spx_skp_read_config_idx_cnt(){/*{{{*/
-    int cnt = 0;
-    struct spx_skp_idx *tmp_idx = spx_skp_read_config();
-    while (tmp_idx->next_idx){
-        cnt++;
-        tmp_idx = tmp_idx->next_idx;
-    }
-
-    return cnt;
-}/*}}}*/
-
-
-/*
- * skp_list operation
- */
-
- //spx_skp_list add
-struct spx_skp_list_node *spx_skp_list_add(struct spx_skp_list *skp_list, struct spx_skp *skp){/*{{{*/
-    if (NULL == skp_list){
-        printf("list is NULL\n");
-        return NULL;
-    }
-
-    if (NULL == skp){
-        printf("skp is NULL\n");
-        return NULL;
-    }
-
-    struct spx_skp_list_node *new_skp = (struct spx_skp_list_node *) calloc(1, sizeof(struct spx_skp_list_node));
-    printf("************new skp_node*****************\n");
-    new_skp->skp = skp;
-    struct spx_skp_list_node *tmp_skp_node = skp_list->tail;
-
-    if (NULL == tmp_skp_node){
-        skp_list->head = new_skp;
-        skp_list->tail = new_skp;
-    } else {
-        tmp_skp_node->next_skp = new_skp;
-        skp_list->tail = new_skp;
-    }
-
-    return new_skp;
-}/*}}}*/
-
- //spx_skp_list delete, ATTENTION: spx_skp in spx_skp_list_node is not free, it is move to the freeze list
-int spx_skp_list_delete(struct spx_skp_list *skp_list, char *skp_name){/*{{{*/
-    if (NULL == skp_list){
-        printf("list is NULL\n");
-        return -1;
-    }
-
-    if (NULL == skp_name){
-        printf("skp is NULL in spx_skp_list_delete\n");
-        return -1;
-    }
-
-    struct spx_skp_list_node *tmp_skp_node = skp_list->head;
-    struct spx_skp_list_node *pre_skp_node = skp_list->head;
-    if (NULL == tmp_skp_node){
-        printf("tmp_skp_node is NULL\n");
-        return -1;
-    }
-
-    while (tmp_skp_node){
-        if ( (tmp_skp_node->skp != NULL) && (tmp_skp_node->skp->name != NULL) && !strncmp(tmp_skp_node->skp->name, skp_name, strlen(skp_name))){
-            if (tmp_skp_node == pre_skp_node){
-                skp_list->head = tmp_skp_node->next_skp;
-                if (NULL == tmp_skp_node->next_skp)
-                    skp_list->tail = NULL;
-            } else {
-                pre_skp_node->next_skp = tmp_skp_node->next_skp;
-                if (NULL == tmp_skp_node->next_skp)
-                    skp_list->tail = pre_skp_node;
-            }
-
-            printf("************free skp_node****************\n");
-            free(tmp_skp_node);
-            return 0;
-        }
-
-        pre_skp_node = tmp_skp_node;
-        tmp_skp_node = tmp_skp_node->next_skp; 
-    }
-
-    return -1;
-}/*}}}*/
-
-//spx_skp_list query
-struct spx_skp * spx_skp_list_get(struct spx_skp_list *skp_list, char *skp_name, err_t *err){/*{{{*/
-    if (NULL == skp_list){
-        printf("skp_list is NULL in spx_skp_list_get\n");
-        return NULL;
-    }
-
-    struct spx_skp_list_node *tmp_skp_node = skp_list->head;
-    if (NULL == tmp_skp_node){
-        printf("tmp_skp is NULL\n");
-        return NULL;
-    }
-
-    while (tmp_skp_node){
-        if ((tmp_skp_node->skp->name != NULL) && !strncmp(tmp_skp_node->skp->name, skp_name, strlen(skp_name))){
-                return tmp_skp_node->skp; 
-        }
-
-        tmp_skp_node = tmp_skp_node->next_skp; 
-    }
-
-    return NULL;
-}/*}}}*/
-
-struct spx_skp * spx_skp_list_get_push_queue(struct spx_skp_list *skp_list, char *skp_name, err_t *err){/*{{{*/
-    if (NULL == skp_list){
-        printf("skp_list is NULL in spx_skp_list_get\n");
-        return NULL;
-    }
-
-    struct spx_skp_list_node *tmp_skp_node = skp_list->head;
-    if (NULL == tmp_skp_node){
-        printf("tmp_skp is NULL\n");
-        return NULL;
-    }
-
-    while (tmp_skp_node){
-        if ((tmp_skp_node->skp->name != NULL) && !strncmp(tmp_skp_node->skp->name, skp_name, strlen(skp_name))){
-            if (tmp_skp_node->skp->length < SpxSkpMaxLen){
-                return tmp_skp_node->skp; 
-            } else {
-                printf("push skp:%s size:%zd\n", tmp_skp_node->skp->name, tmp_skp_node->skp->length);
-                if (spx_skp_queue_push(tmp_skp_node->skp) != 0){
-                    *err = -1;
-                    return tmp_skp_node->skp;
-                }
-                spx_skp_list_delete(&g_spx_skp_list, skp_name);
-                return NULL;
-            }
-        }
-
-        tmp_skp_node = tmp_skp_node->next_skp; 
-    }
-
-    return NULL;
-}/*}}}*/
-
-static int spx_skp_list_node_free(struct spx_skp_list_node **node_ptr){/*{{{*/
-    if (NULL == node_ptr){
-        printf("node_ptr in spx_skp_list_node_free is NULL\n");
-        return -1;
-    }
-
-    struct spx_skp_list_node *skp_list_node = *node_ptr;
-    if (NULL == skp_list_node){
-        printf("skp_list_node in spx_skp_list_node_free is NULL\n");
-        return -1;
-    }
-
-    skp_list_node->skp = NULL;//tips: skp in skp_list always not free, it must have passed to someone before node is free
-    skp_list_node->next_skp = NULL;
-
-    free(skp_list_node);
-    *node_ptr = NULL;
-
-    return 0;
-}/*}}}*/
-
-struct spx_skp_list *spx_skp_list_new(){/*{{{*/
-    struct spx_skp_list *skp_list = (struct spx_skp_list *) malloc(sizeof(*skp_list));
-    if (NULL == skp_list){
-        printf("skp_list malloc failed\n");
-        return NULL;
-    }
-
-    skp_list->head = NULL;
-    skp_list->tail = NULL;
-
-    return skp_list;
-}/*}}}*/
-
-int spx_skp_list_destory(struct spx_skp_list **skp_list_ptr){/*{{{*/
-    if (NULL == skp_list_ptr){
-        printf("skp_list is NULL in spx_skp_list_destory\n");
-        return -1;
-    }
-
-    struct spx_skp_list *skp_list = *skp_list_ptr;
-    if (NULL == skp_list){
-        printf("skp_list is NULL in  spx_skp_list_destory\n");
-        return -1;
-    }
-
-    while(skp_list->head != NULL){
-        struct spx_skp_list_node * head2free = skp_list->head;
-        skp_list->head = skp_list->head->next_skp;
-        spx_skp_list_node_free(&head2free);
-    }
-
-    skp_list->tail = NULL;
-    free(skp_list);
-    *skp_list_ptr = NULL;
-
-    return 0;
-}/*}}}*/
-
-/*
- * block_skp_list operation
- */
-
- //spx_block_skp_list add
-struct spx_block_skp_list_node *spx_block_skp_list_add(struct spx_block_skp *block_skp){/*{{{*/
-    struct spx_block_skp_list *block_skp_list = &g_spx_block_skp_list;
-    if (NULL == block_skp_list){
-        printf("block_skp_list is NULL\n");
-        return NULL;
-    }
-
-    if (NULL == block_skp){
-        printf("block_skp is NULL\n");
-        return NULL;
-    }
-
-    struct spx_block_skp_list_node *new_block_skp_node = (struct spx_block_skp_list_node *) calloc(1, sizeof(struct spx_block_skp_list_node));
-    new_block_skp_node->block_skp = block_skp;
-    struct spx_block_skp_list_node *tmp_block_skp_node = block_skp_list->tail;
-
-    if (NULL == tmp_block_skp_node){
-        block_skp_list->head = new_block_skp_node;
-        block_skp_list->tail = new_block_skp_node;
-    } else {
-        tmp_block_skp_node->next_block_skp = new_block_skp_node;
-        block_skp_list->tail = new_block_skp_node;
-    }
-
-    return new_block_skp_node;
-}/*}}}*/
-
-//spx_block_skp_list query
-struct spx_block_skp * spx_block_skp_list_get(char *block_skp_name, spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, SpxSkpFreeDelegate free_key){/*{{{*/
-    struct spx_block_skp_list *block_skp_list = &g_spx_block_skp_list;
-    struct spx_block_skp_list_node *tmp_block_skp_node = block_skp_list->head;
-    if (tmp_block_skp_node != NULL){
-        while (tmp_block_skp_node){
-            if ( (tmp_block_skp_node->block_skp != NULL) && (tmp_block_skp_node->block_skp->name != NULL) && !strncmp(tmp_block_skp_node->block_skp->name, block_skp_name, strlen(block_skp_name))){
-                    return tmp_block_skp_node->block_skp; 
-            }
-            tmp_block_skp_node = tmp_block_skp_node->next_block_skp; 
-        }
-    }
-
-    struct spx_block_skp *block_skp = spx_block_skp_new(key_type, cmp_key, value_type, cmp_value, block_skp_name, free_key);
-    if (spx_block_skp_unserial(block_skp) != 0){
-        printf("unserial block_skp:%s failed or not built yet\n", block_skp_name);
-        spx_block_skp_destory(&block_skp);
-    } else {
-        spx_block_skp_list_add(block_skp);
-        return block_skp;
-    }
-
-    return NULL;
 }/*}}}*/
 
 /*
@@ -560,7 +114,7 @@ int spx_block_skp_node_insert(struct spx_block_skp *block_skp, struct spx_block_
 }/*}}}*/
 
 //create a new spx_block_skp
-static struct spx_block_skp * spx_block_skp_new(spx_skp_type key_type, SpxSkpCmpDelegate cmp_key, spx_skp_type value_type, SpxSkpCmpDelegate cmp_value, const char * block_skp_name, SpxSkpFreeDelegate free_key){/*{{{*/
+struct spx_block_skp * spx_block_skp_new(SpxSkpType key_type, SpxSkpType value_type, CmpDelegate cmp_key, CmpDelegate cmp_value, const char * block_skp_name, FreeDelegate free_key, FreeDelegate free_value){/*{{{*/
     struct spx_block_skp * block_skp = (struct spx_block_skp*) malloc(sizeof(struct spx_block_skp));
     if (block_skp == NULL){
         printf("malloc block_skp failed\n");
@@ -575,13 +129,18 @@ static struct spx_block_skp * spx_block_skp_new(spx_skp_type key_type, SpxSkpCmp
     block_skp->cmp_value = cmp_value;
     block_skp->key_type = key_type;
     block_skp->value_type = value_type;
-    //block_skp->mutex = PTHREAD_MUTEX_INITIALIZER;//mutex for spx_block_skp
     pthread_mutex_init(&block_skp->mutex, NULL);
 
     if (NULL == free_key){
         block_skp->free_key = spx_skp_default_free;
     } else {
         block_skp->free_key = free_key;
+    }
+
+    if (NULL == free_value){
+        block_skp->free_value = spx_skp_default_free;
+    } else {
+        block_skp->free_value = free_value;
     }
 
     struct spx_block_skp_node * head = spx_block_skp_node_new(SpxSkpMaxLevel, NULL, NULL, -1);
@@ -604,7 +163,7 @@ static struct spx_block_skp * spx_block_skp_new(spx_skp_type key_type, SpxSkpCmp
 }/*}}}*/
 
 //destory the struct spx_block_skp
-static int spx_block_skp_destory(struct spx_block_skp ** p_block_skp){/*{{{*/
+int spx_block_skp_destroy(struct spx_block_skp ** p_block_skp){/*{{{*/
     if (NULL == p_block_skp){
         printf("p_block_skp is NULL\n");
         return -1;
@@ -746,31 +305,6 @@ r1:
     return -1;
 }/*}}}*/
 
-err_t spx_block_skp_merge(struct spx_block_skp *block_skp, struct spx_skp *skp){/*{{{*/
-    if (NULL == block_skp){
-        printf("block_skp is NULL\n");
-        return -1;
-    }
-
-    if (NULL == skp){
-        printf("skp is NULL\n");
-        return -1;
-    }
-
-    struct spx_skp_node *cur_skp_node = skp->head->next_node[0];
-    while (cur_skp_node){
-        struct spx_skp_node_value *tmp_nv = cur_skp_node->value;
-        while (tmp_nv != NULL){
-            spx_block_skp_insert(block_skp, cur_skp_node->key, tmp_nv->value); 
-            tmp_nv = tmp_nv->next_value;
-        }
-
-        cur_skp_node = cur_skp_node->next_node[0];
-    }
-
-    return 0;
-}/*}}}*/
-
 /*
  *spx_block_skp query
  */
@@ -838,46 +372,31 @@ pthread_t spx_block_skp_thread_new(SpxLogDelegate *log, err_t *err){/*{{{*/
     return tid;
 }/*}}}*/
 
-static void spx_block_skp_queue_periodic_check_cb(struct ev_loop *loop, ev_periodic *w, int revents){/*{{{*/
-    struct spx_skp *skp = spx_skp_queue_pop();
-    while (skp != NULL){
-        pool_task_add(spx_block_skp_event_insert, skp);
-        //if (spx_block_skp_event_insert(skp) != 0){
-        //    printf("spx_block_skp_event_insert failed\n");
-        //}
-        skp = spx_skp_queue_pop();
-    }
-}/*}}}*/
-
 static void spx_block_skp_handler(void *arg){/*{{{*/
-    SpxLogDelegate *log = (SpxLogDelegate *) arg;
-    g_skp_block_loop = EV_DEFAULT;
-    if (NULL == g_skp_block_loop){
-        SpxLog1(log, SpxLogError, "ev_loop_new failed");
-        return;
+    while (1) {
+        struct spx_block_skp_index* idx_lst = spx_block_skp_load_index();
+        struct spx_block_skp_index* tmp_idx = idx_lst->next_idx;
+        while (tmp_idx != NULL) {
+            struct logdb_queue* task_queue = spx_block_skp_task_queue_dispatcher(tmp_idx->idx);
+            printf("revolver queue:%s ===> size:%zd\n", task_queue->name, task_queue->size);
+            struct spx_block_skp_task* task = logdb_queue_pop(task_queue);
+            task->skp = spx_block_skp_pool_dispatcher(tmp_idx->idx);
+            pool_task_add(spx_block_skp_insert_task, task);
+            
+            tmp_idx = tmp_idx->next_idx;
+        }
     }
-
-    ev_periodic periodic_watcher;
-    ev_periodic_init(&periodic_watcher, spx_block_skp_queue_periodic_check_cb, 0., 3.0, 0);
-    ev_periodic_start(g_skp_block_loop, &periodic_watcher);
-    ev_run(g_skp_block_loop, 0);
 }/*}}}*/
 
-static void spx_block_skp_event_insert(void *arg){/*{{{*/
-    struct spx_skp *skp = (struct spx_skp*) arg;
-    if (NULL == skp){
-        printf("skp in spx_block_skp_event_insert is NULL\n");
+static void spx_block_skp_insert_task(void *arg){/*{{{*/
+    if (NULL == arg){
+        printf("arg is NULL in spx_block_skp_insert_task\n");
         return;
     }
-
-    printf("merge skp:%s size:%zd\n", skp->name, skp->length);
-    struct spx_block_skp *block_skp = spx_block_skp_list_get(skp->name, skp->key_type, skp->cmp_key, skp->value_type, skp->cmp_value, skp->free_key);
-    if (block_skp != NULL ){
-        pthread_mutex_lock(&block_skp->mutex);//lock block_skp
-        spx_block_skp_merge(block_skp, skp);
-        pthread_mutex_unlock(&block_skp->mutex);//unlock block_skp
-        printf("############################ SKP_LEN: %d ###############################\n", (int)block_skp->length);
+    
+    if (node != NULL){
+                printf("exec task:%s\n", (char*)node->key);
+                printf("exec task:%d\n", *(int*)node->key);
+                printf("exec task:%ld\n", *(long*)node->key);
     }
-
-    spx_skp_destory(skp);
 }/*}}}*/

@@ -19,6 +19,8 @@ static struct logdb_queue_node* logdb_queue_node_new(void* value){/*{{{*/
 
     new_node->value = value;
     new_node->next_node = NULL;
+
+    return new_node;
 }/*}}}*/
 
 static int logdb_queue_node_destroy(struct logdb_queue_node** p_node){/*{{{*/

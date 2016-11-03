@@ -8,13 +8,41 @@
 #include <stdio.h>
 #include "spx_block_skp_config.h"
 #include "spx_block_skp_common.h"
+#include "logdb_skp_common.h"
+#include "spx_block_skp_serial.h"
 #include "logdb_map.h"
+#include "spx_block_skp.h"
 
 #define SpxSkpIndexConf "./skiplist/config/index.config" 
+#define TaskPoolSize 1024
 
-struct logdb_map* g_idx_task_map = NULL;
+struct logdb_map* g_task_queue = NULL;
+struct logdb_map* g_skp_pool = NULL;
+struct logdb_queue* g_task_pool = NULL;
 
-static void free_queue(void* q);
+static void free_task_queue(void* q);
+static void free_block_skp(void* skp);
+static void free_md(void* mdp);
+
+static void free_task_queue(void* q){/*{{{*/
+    struct logdb_queue* queue = (struct logdb_queue*)q;
+    logdb_queue_destroy(&queue);
+}/*}}}*/
+
+static void free_block_skp(void* skp){/*{{{*/
+    struct spx_block_skp* block_skp = (struct spx_block_skp*) skp;
+    spx_block_skp_destroy(&block_skp);
+}/*}}}*/
+
+static void free_md(void* mdp){/*{{{*/
+    if (NULL == mdp){
+        printf("mdp is NULL in free_md\n");
+    }
+
+    struct spx_skp_serial_metadata* md = (struct spx_skp_serial_metadata*)mdp;
+    spx_skp_serial_md_free(md);
+}/*}}}*/
+
 
 struct spx_block_skp_index* spx_block_skp_load_index()/*{{{*/
 {
@@ -26,7 +54,7 @@ struct spx_block_skp_index* spx_block_skp_load_index()/*{{{*/
         }
 
         char line[100];
-        struct spx_block_skp_idx* tmp_idx = &g_spx_block_skp_idx_head;
+        struct spx_block_skp_index* tmp_idx = &g_spx_block_skp_idx_head;
         while(fgets(line, sizeof(line), fp)){
             if('#' != *line && '\n' != *line){
                 int i = 0;
@@ -70,23 +98,69 @@ int spx_block_skp_count_config_index(){/*{{{*/
     return cnt;
 }/*}}}*/
 
-static void free_queue(void* q){
-    struct logdb_queue* queue = (struct logdb_queue*)q;
-    logdb_queue_destroy(&queue);
-}
 
-int spx_block_skp_task_map_init(){
-    if (NULL == g_idx_task_map){
-        g_idx_task_map = logdb_map_new(cmp_str, NULL, free_queue);
-        if (NULL == g_idx_task_map){
-            printf("g_idx_task_map is NULL in spx_block_skp_task_map_init\n");
+int spx_block_skp_task_pool_init(){/*{{{*/
+    g_task_pool = logdb_queue_new("task_pool");
+    if (NULL == g_task_pool){
+        printf("g_task_pool is NULL in spx_block_skp_task_pool_init\n");
+        return -1;
+    }
+
+    int i = 0;
+    for (i = 0; i < TaskPoolSize; i++){
+        struct spx_block_skp_task* task = (struct spx_block_skp_task*) malloc(sizeof(*task));
+        task->key = NULL;
+        task->value = NULL;
+        task->skp = NULL; 
+        logdb_queue_push(g_task_pool, task);
+    }
+
+    return 0;
+}/*}}}*/
+
+struct spx_block_skp_task* spx_block_skp_task_pool_pop(){/*{{{*/
+    struct spx_block_skp_task* task = logdb_queue_pop(g_task_pool);
+    while (NULL == task)
+        task = logdb_queue_pop();
+    return task;
+}/*}}}*/
+
+int spx_block_skp_task_pool_push(struct spx_block_skp_task* task){/*{{{*/
+    if (NULL == task){
+        printf("task is NULL in spx_block_skp_task_pool_push\n");
+        return -1;
+    }
+
+    if (NULL == task->skp){
+        printf("skp in task is NULL and key, value will not be free\n");
+        return -1;
+    }
+
+    task->skp->free_key(task->key);
+    task->skp->free_value(task->value);
+
+    task->key = NULL;
+    task->value = NULL;
+    task->skp = NULL;
+
+    logdb_queue_push(g_task_pool, task);
+
+    return g_task_pool.size;
+}/*}}}*/
+
+
+int spx_block_skp_task_queue_init(){/*{{{*/
+    if (NULL == g_task_queue){
+        g_task_queue = logdb_map_new(cmp_str, NULL, free_task_queue);
+        if (NULL == g_task_queue){
+            printf("g_task_queue is NULL in spx_block_skp_task_queue_init\n");
             return -1;
         }
     }
 
     struct spx_block_skp_index* idx_lst = spx_block_skp_load_index();
     if (NULL == idx_lst){
-        printf("idx_lst in spx_block_skp_task_map_init is NULL\n");
+        printf("idx_lst in spx_block_skp_task_queue_init is NULL\n");
         return -1;
     }
 
@@ -94,22 +168,88 @@ int spx_block_skp_task_map_init(){
     while (tmp_idx != NULL){
         struct logdb_queue* queue = logdb_queue_new(tmp_idx->idx);
         if (NULL == queue){
-            printf("queue is NULL in spx_block_skp_task_map_init for index:%s\n", tmp_idx->idx);
+            printf("queue is NULL in spx_block_skp_task_queue_init for index:%s\n", tmp_idx->idx);
             continue;
         }
-        logdb_map_insert(g_idx_task_map, tmp_idx->idx, queue);
+        logdb_map_insert(g_task_queue, tmp_idx->idx, queue);
+        tmp_idx = tmp_idx->next_idx;
     }
 
     return 0;
-}
+}/*}}}*/
 
-struct logdb_queue* spx_block_skp_task_queue_dispatcher(char* key){
+struct logdb_queue* spx_block_skp_task_queue_dispatcher(char* key){/*{{{*/
     if (NULL == key){
         printf("key is NULL in spx_block_skp_task_queue_dispatcher\n");
         return NULL;
     }
-    struct logdb_queue* task_queue = logdb_map_get(g_idx_task_map, key);
+    struct logdb_queue* task_queue = logdb_map_get(g_task_queue, key);
 
     return task_queue;
-}
+}/*}}}*/
+
+
+int spx_block_skp_pool_init(){/*{{{*/
+    if (NULL == g_skp_pool){
+        g_skp_pool = logdb_map_new(cmp_str, NULL, free_block_skp);
+        if (NULL == g_skp_pool){
+            printf("g_skp_pool is NULL in spx_block_skp_pool_init\n");
+            return -1;
+        }
+    }
+
+    struct spx_block_skp_index* idx_lst = spx_block_skp_load_index();
+    if (NULL == idx_lst){
+        printf("idx_lst is NULL in spx_block_skp_pool_init\n");
+        return -1;
+    }
+
+    struct spx_block_skp_index* tmp_idx = idx_lst->next_idx;
+    while (tmp_idx != NULL){
+        SpxSkpType key_type = SKP_STR;
+        SpxSkpType value_type = SKP_MD;
+        CmpDelegate cmp_key = cmp_str;
+        CmpDelegate cmp_value = cmp_md;
+        FreeDelegate free_key = NULL;
+        FreeDelegate free_value = free_md;
+        switch (tmp_idx->type){
+            case 0:
+                key_type = SKP_STR;
+                cmp_key = cmp_str;
+                break;
+            case 1:
+                key_type = SKP_INT;
+                cmp_key = cmp_int;
+                break;
+            case 2:
+                key_type = SKP_LONG;
+                cmp_key = cmp_long;
+                break;
+            default:
+                printf("not support type %s\n", tmp_idx->idx);
+                continue;
+        }
+
+        struct spx_block_skp* new_block_skp = (struct spx_block_skp*) spx_block_skp_new(key_type, value_type, cmp_key, cmp_value, tmp_idx->idx, free_key, free_value);
+        if (NULL == new_block_skp){
+            printf("new_block_skp is NULL in spx_block_skp_pool_init\n");
+            continue;
+        }
+        logdb_map_insert(g_skp_pool, tmp_idx->idx, new_block_skp);
+        tmp_idx = tmp_idx->next_idx;
+    }
+    return 0;
+}/*}}}*/
+
+struct spx_block_skp* spx_block_skp_pool_dispatcher(char* key){/*{{{*/
+    if (NULL == key){
+        printf("key is NULL in spx_block_skp_task_queue_dispatcher\n");
+        return NULL;
+    }
+    struct spx_block_skp* block_skp = logdb_map_get(g_skp_pool, key);
+
+    return block_skp;
+}/*}}}*/
+
+
 
