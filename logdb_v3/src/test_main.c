@@ -178,7 +178,9 @@ int main(int argc, char **argv){/*{{{*/
         exit(err);
     }
 
-    spx_block_skp_task_queue_init();
+    spx_block_skp_config_task_queue_init();
+    spx_block_skp_config_pool_init();
+    spx_block_skp_config_task_pool_init();
     //thread_pool_init(spx_block_skp_count_config_index());
     thread_pool_init(20);
 

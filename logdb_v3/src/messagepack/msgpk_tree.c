@@ -270,7 +270,7 @@ struct spx_skp_serial_metadata_list *msgpk_tree_query(struct msgpk_object * obj)
 }/*}}}*/
 
 char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){/*{{{*/
-    struct spx_block_skp_index *tmp_idx = spx_block_skp_load_index(); 
+    struct spx_block_skp_index *tmp_idx = spx_block_skp_config_load_index(); 
     err_t err = 0;
     if (NULL == tmp_idx){
         printf("read index config error\n");
@@ -319,11 +319,24 @@ char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){
         }
 
 
-        struct logdb_queue* task_queue = spx_block_skp_task_queue_dispatcher(index_name);
+        struct logdb_queue* task_queue = spx_block_skp_config_task_queue_dispatcher(index_name);
+        if (NULL == task_queue){
+            printf("spx_block_skp_task_queue_dispatcher failed, task_queue is NULL\n");
+            free(key);//TODO adapter free
+            continue;
+        }
+        struct spx_block_skp* skp = spx_block_skp_config_pool_dispatcher(index_name);
+        if (NULL == skp){
+            printf("spx_block_skp_pool_dispatcher failed, skp is NULL\n");
+            free(key);//TODO adapter free
+            continue;
+        }
+
         struct spx_skp_serial_metadata *new_md = spx_skp_serial_md_copy(md);
-        struct spx_block_skp_task* task = spx_block_skp_task_pool_pop();
+        struct spx_block_skp_task* task = spx_block_skp_config_task_pool_pop();
         task->key = key;
         task->value = new_md;
+        task->skp = skp;
         logdb_queue_push(task_queue, task);
     }
 

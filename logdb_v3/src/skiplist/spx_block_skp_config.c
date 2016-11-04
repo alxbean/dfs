@@ -44,7 +44,7 @@ static void free_md(void* mdp){/*{{{*/
 }/*}}}*/
 
 
-struct spx_block_skp_index* spx_block_skp_load_index()/*{{{*/
+struct spx_block_skp_index* spx_block_skp_config_load_index()/*{{{*/
 {
     if (g_spx_block_skp_idx_head.next_idx == NULL){
         FILE *fp = fopen(SpxSkpIndexConf, "r");
@@ -87,9 +87,9 @@ struct spx_block_skp_index* spx_block_skp_load_index()/*{{{*/
     return &g_spx_block_skp_idx_head;
 }/*}}}*/
 
-int spx_block_skp_count_config_index(){/*{{{*/
+int spx_block_skp_config_count_index(){/*{{{*/
     int cnt = 0;
-    struct spx_block_skp_index *tmp_idx = spx_block_skp_load_index();
+    struct spx_block_skp_index *tmp_idx = spx_block_skp_config_load_index();
     while (tmp_idx->next_idx){
         cnt++;
         tmp_idx = tmp_idx->next_idx;
@@ -99,7 +99,7 @@ int spx_block_skp_count_config_index(){/*{{{*/
 }/*}}}*/
 
 
-int spx_block_skp_task_pool_init(){/*{{{*/
+int spx_block_skp_config_task_pool_init(){/*{{{*/
     g_task_pool = logdb_queue_new("task_pool");
     if (NULL == g_task_pool){
         printf("g_task_pool is NULL in spx_block_skp_task_pool_init\n");
@@ -118,14 +118,14 @@ int spx_block_skp_task_pool_init(){/*{{{*/
     return 0;
 }/*}}}*/
 
-struct spx_block_skp_task* spx_block_skp_task_pool_pop(){/*{{{*/
+struct spx_block_skp_task* spx_block_skp_config_task_pool_pop(){/*{{{*/
     struct spx_block_skp_task* task = logdb_queue_pop(g_task_pool);
     while (NULL == task)
-        task = logdb_queue_pop();
+        task = logdb_queue_pop(g_task_pool);
     return task;
 }/*}}}*/
 
-int spx_block_skp_task_pool_push(struct spx_block_skp_task* task){/*{{{*/
+int spx_block_skp_config_task_pool_push(struct spx_block_skp_task* task){/*{{{*/
     if (NULL == task){
         printf("task is NULL in spx_block_skp_task_pool_push\n");
         return -1;
@@ -145,11 +145,11 @@ int spx_block_skp_task_pool_push(struct spx_block_skp_task* task){/*{{{*/
 
     logdb_queue_push(g_task_pool, task);
 
-    return g_task_pool.size;
+    return g_task_pool->size;
 }/*}}}*/
 
 
-int spx_block_skp_task_queue_init(){/*{{{*/
+int spx_block_skp_config_task_queue_init(){/*{{{*/
     if (NULL == g_task_queue){
         g_task_queue = logdb_map_new(cmp_str, NULL, free_task_queue);
         if (NULL == g_task_queue){
@@ -158,7 +158,7 @@ int spx_block_skp_task_queue_init(){/*{{{*/
         }
     }
 
-    struct spx_block_skp_index* idx_lst = spx_block_skp_load_index();
+    struct spx_block_skp_index* idx_lst = spx_block_skp_config_load_index();
     if (NULL == idx_lst){
         printf("idx_lst in spx_block_skp_task_queue_init is NULL\n");
         return -1;
@@ -178,7 +178,7 @@ int spx_block_skp_task_queue_init(){/*{{{*/
     return 0;
 }/*}}}*/
 
-struct logdb_queue* spx_block_skp_task_queue_dispatcher(char* key){/*{{{*/
+struct logdb_queue* spx_block_skp_config_task_queue_dispatcher(char* key){/*{{{*/
     if (NULL == key){
         printf("key is NULL in spx_block_skp_task_queue_dispatcher\n");
         return NULL;
@@ -189,7 +189,7 @@ struct logdb_queue* spx_block_skp_task_queue_dispatcher(char* key){/*{{{*/
 }/*}}}*/
 
 
-int spx_block_skp_pool_init(){/*{{{*/
+int spx_block_skp_config_pool_init(){/*{{{*/
     if (NULL == g_skp_pool){
         g_skp_pool = logdb_map_new(cmp_str, NULL, free_block_skp);
         if (NULL == g_skp_pool){
@@ -198,7 +198,7 @@ int spx_block_skp_pool_init(){/*{{{*/
         }
     }
 
-    struct spx_block_skp_index* idx_lst = spx_block_skp_load_index();
+    struct spx_block_skp_index* idx_lst = spx_block_skp_config_load_index();
     if (NULL == idx_lst){
         printf("idx_lst is NULL in spx_block_skp_pool_init\n");
         return -1;
@@ -241,7 +241,7 @@ int spx_block_skp_pool_init(){/*{{{*/
     return 0;
 }/*}}}*/
 
-struct spx_block_skp* spx_block_skp_pool_dispatcher(char* key){/*{{{*/
+struct spx_block_skp* spx_block_skp_config_pool_dispatcher(char* key){/*{{{*/
     if (NULL == key){
         printf("key is NULL in spx_block_skp_task_queue_dispatcher\n");
         return NULL;
@@ -250,6 +250,3 @@ struct spx_block_skp* spx_block_skp_pool_dispatcher(char* key){/*{{{*/
 
     return block_skp;
 }/*}}}*/
-
-
-

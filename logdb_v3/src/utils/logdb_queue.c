@@ -133,7 +133,7 @@ void* logdb_queue_pop(struct logdb_queue* queue){/*{{{*/
     void* value = NULL;
 
     if (0 == queue->size){
-        printf("queue is empty\n");
+        //printf("queue:%s is empty\n", queue->name);
     } else {
         pthread_mutex_lock(&queue->mutex);
         struct logdb_queue_node *dead_node = queue->head;

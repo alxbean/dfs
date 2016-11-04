@@ -22,25 +22,25 @@ extern "C" {
     struct spx_block_skp_task{
         void *key;
         void *value;
-        spx_block_skp* skp;
+        struct spx_block_skp* skp;
     };
 
     //config
-    struct spx_block_skp_index* spx_block_skp_load_index();
-    int spx_block_skp_count_config_index();
+    struct spx_block_skp_index* spx_block_skp_config_load_index();
+    int spx_block_skp_config_count_index();
 
     //task queue
-    int spx_block_skp_task_queue_init();
-    struct logdb_queue* spx_block_skp_task_queue_dispatcher(char* key);
+    int spx_block_skp_config_task_queue_init();
+    struct logdb_queue* spx_block_skp_config_task_queue_dispatcher(char* key);
 
     //block_skp pool
-    int spx_block_skp_pool_init();
-    struct spx_block_skp* spx_block_skp_pool_dispatcher(char* key);
+    int spx_block_skp_config_pool_init();
+    struct spx_block_skp* spx_block_skp_config_pool_dispatcher(char* key);
 
     //task_ctx pool
-    int spx_block_skp_task_pool_init();
-    struct spx_block_skp_task* spx_block_skp_task_pool_pop();
-    int spx_block_skp_task_pool_push(struct spx_block_skp_task* task);
+    int spx_block_skp_config_task_pool_init();
+    struct spx_block_skp_task* spx_block_skp_config_task_pool_pop();
+    int spx_block_skp_config_task_pool_push(struct spx_block_skp_task* task);
 
 #ifdef __cplusplus
 }

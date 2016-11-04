@@ -374,15 +374,14 @@ pthread_t spx_block_skp_thread_new(SpxLogDelegate *log, err_t *err){/*{{{*/
 
 static void spx_block_skp_handler(void *arg){/*{{{*/
     while (1) {
-        struct spx_block_skp_index* idx_lst = spx_block_skp_load_index();
+        struct spx_block_skp_index* idx_lst = spx_block_skp_config_load_index();
         struct spx_block_skp_index* tmp_idx = idx_lst->next_idx;
         while (tmp_idx != NULL) {
-            struct logdb_queue* task_queue = spx_block_skp_task_queue_dispatcher(tmp_idx->idx);
-            printf("revolver queue:%s ===> size:%zd\n", task_queue->name, task_queue->size);
+            struct logdb_queue* task_queue = spx_block_skp_config_task_queue_dispatcher(tmp_idx->idx);
+            //printf("revolver queue:%s ===> size:%zd\n", task_queue->name, task_queue->size);
             struct spx_block_skp_task* task = logdb_queue_pop(task_queue);
-            task->skp = spx_block_skp_pool_dispatcher(tmp_idx->idx);
-            pool_task_add(spx_block_skp_insert_task, task);
-            
+            if (task != NULL)
+                pool_task_add(spx_block_skp_insert_task, task);
             tmp_idx = tmp_idx->next_idx;
         }
     }
@@ -393,10 +392,11 @@ static void spx_block_skp_insert_task(void *arg){/*{{{*/
         printf("arg is NULL in spx_block_skp_insert_task\n");
         return;
     }
+    struct spx_block_skp_task* task = (struct spx_block_skp_task*)arg;
     
-    if (node != NULL){
-                printf("exec task:%s\n", (char*)node->key);
-                printf("exec task:%d\n", *(int*)node->key);
-                printf("exec task:%ld\n", *(long*)node->key);
+    if (task != NULL){
+                printf("exec task:%s\n", task->skp->name);
     }
+
+    spx_block_skp_config_task_pool_push(task);
 }/*}}}*/

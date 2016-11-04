@@ -576,16 +576,16 @@ static SpxSkpO2BDelegate spx_skp_serial_get_o2b(SpxSkpType type){/*{{{*/
     SpxSkpO2BDelegate object2byte = NULL;
 
     switch(type){
-        case SKP_TYPE_MD:
+        case SKP_MD:
             object2byte = spx_block_skp_common_md2byte;
             break;
-        case SKP_TYPE_STR:
+        case SKP_STR:
             object2byte = spx_block_skp_common_str2byte;
             break;
-        case SKP_TYPE_INT:
+        case SKP_INT:
             object2byte = spx_block_skp_common_int2byte;
             break;
-        case SKP_TYPE_LONG:
+        case SKP_LONG:
             object2byte = spx_block_skp_common_long2byte;
             break;
         default:
@@ -599,16 +599,16 @@ static SpxSkpB2ODelegate spx_skp_serial_get_b2o(SpxSkpType type){/*{{{*/
     SpxSkpB2ODelegate byte2object = NULL;
 
     switch(type){
-        case SKP_TYPE_MD:
+        case SKP_MD:
             byte2object = spx_block_skp_common_byte2md;
             break;
-        case SKP_TYPE_STR:
+        case SKP_STR:
             byte2object = spx_block_skp_common_byte2str;
             break;
-        case SKP_TYPE_INT:
+        case SKP_INT:
             byte2object = spx_block_skp_common_byte2int;
             break;
-        case SKP_TYPE_LONG:
+        case SKP_LONG:
             byte2object = spx_block_skp_common_byte2long;
             break;
         default:
