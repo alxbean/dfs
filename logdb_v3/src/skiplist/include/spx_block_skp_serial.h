@@ -66,20 +66,18 @@ extern "C" {
     int spx_block_serial_context_free(struct spx_block_skp_node_serial_context **serial_ctx);
 
     //spx_block_skp_serial
-    int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index, struct spx_block_skp_node_serial_context *serial_ctx);
+    int64_t spx_block_skp_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index, struct spx_block_skp_node_serial_context *serial_ctx);
+    int spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index, struct spx_skp_query_result *result);
     int spx_block_skp_unserial(struct spx_block_skp *block_skp);
 
-    //spx_skp_list operation
-    struct spx_skp * spx_skp_list_serial_add(CmpDelegate cmp_key, CmpDelegate cmp_value, SpxSkpB2ODelegate byte2key, SpxSkpB2ODelegate byte2value, const char * sl_name, FreeDelegate free_key, FreeDelegate free_value);
+    //log persistence
     struct spx_skp_serial_metadata_list * spx_skp_serial_metadata_list_new();
     int spx_skp_serial_metadata_list_insert(struct spx_skp_serial_metadata_list * md_lst, struct spx_skp_serial_metadata *md);
     int spx_skp_serial_metadata_list_free(struct spx_skp_serial_metadata_list * md_lst, bool_t is_free_md);
-    //ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len);
     struct spx_skp_serial_metadata* spx_skp_serial_data_writer2md(const ubyte_t *data, size_t len);
     ubyte_t * spx_skp_serial_data_reader(struct spx_skp_serial_metadata *md);
     void spx_skp_serial_md_free(struct spx_skp_serial_metadata *md);
     struct spx_skp_serial_metadata *spx_skp_serial_md_copy(struct spx_skp_serial_metadata * src_md);
-    int spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index, struct spx_skp_query_result *result);
 
     //m2b, b2m
     ubyte_t *spx_skp_serial_m2b(struct spx_skp_serial_metadata *md, int *byteLen);
