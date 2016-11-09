@@ -213,8 +213,7 @@ struct spx_skp * spx_skp_new_tmp(CmpDelegate cmp_key, CmpDelegate cmp_value, con
 }/*}}}*/
 
 //create a new struct spx_skp
-struct spx_skp * spx_skp_new(CmpDelegate cmp_key, CmpDelegate cmp_value, const char * skp_name, FreeDelegate free_key, FreeDelegate free_value)/*{{{*/
-{
+struct spx_skp * spx_skp_new(CmpDelegate cmp_key, CmpDelegate cmp_value, const char * skp_name, FreeDelegate free_key, FreeDelegate free_value)/*{{{*/{
     struct spx_skp * skp = (struct spx_skp*) malloc(sizeof(struct spx_skp));
     if(skp == NULL){
         return NULL;
@@ -314,8 +313,7 @@ struct spx_skp_node * spx_skp_insert(struct spx_skp * skp, void * key, void * va
     //exist node 
     if ((cur_node != NULL) && (cur_node->key != NULL) && !skp->cmp_key(key, cur_node->key)){
         skp->free_key(key);//note:memory leak bug without it!!!
-        if (0 == spx_skp_value_insert(skp, SKP_NORMAL, cur_node, value))
-            skp->length++;//value count as a length node
+        spx_skp_value_insert(skp, SKP_NORMAL, cur_node, value);
         return cur_node;
     }
 

@@ -14,7 +14,7 @@
 #include "spx_block_skp.h"
 
 #define SpxSkpIndexConf "./skiplist/config/index.config" 
-#define TaskPoolSize 1024
+#define TaskPoolSize 10 
 
 struct logdb_map* g_task_queue = NULL;
 struct logdb_map* g_skp_pool = NULL;
@@ -136,8 +136,10 @@ int spx_block_skp_config_task_pool_push(struct spx_block_skp_task* task){/*{{{*/
         return -1;
     }
 
-    task->skp->free_key(task->key);
-    task->skp->free_value(task->value);
+    if (task->key != NULL)
+        task->skp->free_key(task->key);
+    if (task->value != NULL)
+        task->skp->free_value(task->value);
 
     task->key = NULL;
     task->value = NULL;
@@ -147,7 +149,6 @@ int spx_block_skp_config_task_pool_push(struct spx_block_skp_task* task){/*{{{*/
 
     return g_task_pool->size;
 }/*}}}*/
-
 
 int spx_block_skp_config_task_queue_init(){/*{{{*/
     if (NULL == g_task_queue){

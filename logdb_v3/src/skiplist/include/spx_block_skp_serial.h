@@ -54,7 +54,7 @@ extern "C" {
         struct spx_skp_serial_metadata_list_node *tail;
     };
 
-    struct spx_block_skp_node_serial_context{
+    struct spx_block_skp_serial_context{
         void *old_left_key;
         void *old_right_key;
         void *new_left_key;
@@ -62,11 +62,11 @@ extern "C" {
     };
 
     //serial context
-    struct spx_block_skp_node_serial_context *spx_block_serial_context_new();
-    int spx_block_serial_context_free(struct spx_block_skp_node_serial_context **serial_ctx);
+    struct spx_block_skp_serial_context* spx_block_skp_serial_context_new();
+    int spx_block_skp_serial_context_free(struct spx_block_skp_serial_context **serial_ctx);
 
     //spx_block_skp_serial
-    int64_t spx_block_skp_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index, struct spx_block_skp_node_serial_context *serial_ctx);
+    int64_t spx_block_skp_serial(struct spx_block_skp *block_skp, void *key, void * value, int64_t index, struct spx_block_skp_serial_context *serial_ctx);
     int spx_block_skp_serial_node_query(struct spx_block_skp *block_skp, void *key, int64_t index, struct spx_skp_query_result *result);
     int spx_block_skp_unserial(struct spx_block_skp *block_skp);
 

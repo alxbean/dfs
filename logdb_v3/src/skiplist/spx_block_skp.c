@@ -14,13 +14,12 @@
 #include "thread_pool.h"
 
 #define SpxSkpIndexConf "./skiplist/config/index.config" 
-#define SpxSkpMaxLen 1000
 
 #define NewBlockNode(n) ((struct spx_block_skp_node *) calloc(1, sizeof(struct spx_block_skp_node) + n*sizeof(struct spx_block_skp_node*)))
 
 //block_skp
-static int spx_block_skp_node_free(struct spx_block_skp *block_skp, struct spx_block_skp_node *block_node);
-static int spx_block_skp_insert(struct spx_block_skp * block_skp, void * key, void *value);
+static int spx_block_skp_node_free(struct spx_block_skp* block_skp, struct spx_block_skp_node* block_node);
+static int spx_block_skp_insert(struct spx_block_skp* block_skp, void** key, void* value);
 
 //block task
 static void spx_block_skp_handler(void *arg);
@@ -189,12 +188,14 @@ int spx_block_skp_destroy(struct spx_block_skp ** p_block_skp){/*{{{*/
 }/*}}}*/
 
 //insert a node to struct spx_block_skp
-static int spx_block_skp_insert(struct spx_block_skp *block_skp, void * key, void *value){/*{{{*/
+static int spx_block_skp_insert(struct spx_block_skp* block_skp, void** p_key, void* value){/*{{{*/
     if (block_skp == NULL){
         printf("block_skp is NULL\n");
         return -1;
     }
 
+    //lock block_skp
+    pthread_mutex_lock(&block_skp->mutex);
     //pthread_mutex_lock(&block_skp->mutex);//lock block_skp
 
     struct spx_block_skp_node *update[SpxSkpMaxLevel];
@@ -202,6 +203,7 @@ static int spx_block_skp_insert(struct spx_block_skp *block_skp, void * key, voi
     struct spx_block_skp_node *target_node = NULL;
     int64_t off = 0;
     int64_t len = 0;
+    void* key = *p_key;
 
     int i;
     //find the nodes to insert
@@ -228,23 +230,35 @@ static int spx_block_skp_insert(struct spx_block_skp *block_skp, void * key, voi
             target_node = pre_node;
     }
 
-    struct spx_block_skp_node_serial_context *serial_ctx = spx_block_serial_context_new();
-
-    //insert node 
-    int64_t index = spx_block_skp_node_serial(block_skp, key, value, target_node->index, serial_ctx); 
+    struct spx_block_skp_serial_context* serial_ctx = spx_block_skp_serial_context_new();
+    //lock node 
+    //pthread_mutex_lock(&target_node->mutex);
+    int64_t index = spx_block_skp_serial(block_skp, key, value, target_node->index, serial_ctx); 
     if (-2 == index){
         //insert node successfully
-        if (serial_ctx->old_left_key != NULL){
+        if (block_skp->cmp_key(target_node->left_key, key) > 0){
             block_skp->free_key(target_node->left_key);
-            target_node->left_key = serial_ctx->old_left_key;
-        }
-        
-        if (serial_ctx->old_right_key != NULL){
+            target_node->left_key = key;
+            *p_key = NULL;
+        } else if (block_skp->cmp_key(target_node->right_key, key) < 0){
             block_skp->free_key(target_node->right_key);
-            target_node->right_key = serial_ctx->old_right_key;
+            target_node->right_key = key;
+            *p_key = NULL;
         }
-
     } else if (index >= 0){
+        if (serial_ctx->old_left_key != NULL && block_skp->cmp_key(serial_ctx->old_left_key, key) > 0){
+            block_skp->free_key(serial_ctx->old_left_key);
+            serial_ctx->old_left_key = key;
+            *p_key = NULL;
+        } else if (serial_ctx->new_right_key != NULL && block_skp->cmp_key(serial_ctx->new_right_key, key) < 0){
+            block_skp->free_key(serial_ctx->new_right_key);
+            serial_ctx->new_right_key = key;
+            *p_key = NULL;
+        } else if ((serial_ctx->old_right_key != NULL && block_skp->cmp_key(serial_ctx->old_right_key, key) < 0) && (serial_ctx->new_left_key != NULL && block_skp->cmp_key(serial_ctx->new_left_key, key) > 0)){
+            block_skp->free_key(serial_ctx->new_left_key);
+            serial_ctx->new_left_key = key;
+            *p_key = NULL;
+        }
         if (serial_ctx->old_left_key != NULL){
             block_skp->free_key(target_node->left_key);
             target_node->left_key = serial_ctx->old_left_key;
@@ -253,30 +267,16 @@ static int spx_block_skp_insert(struct spx_block_skp *block_skp, void * key, voi
         if (serial_ctx->old_right_key != NULL){
             block_skp->free_key(target_node->right_key);
             target_node->right_key = serial_ctx->old_right_key;
-        }
-
-        if (NULL == serial_ctx->new_left_key || NULL == serial_ctx->new_right_key){
-            if (serial_ctx->old_left_key != NULL){
-                block_skp->free_key(serial_ctx->old_left_key);
-            }
-
-            if (serial_ctx->old_right_key != NULL){
-                block_skp->free_key(serial_ctx->old_right_key);
-            }
-
-            printf("split a new block , but  new_left_key or new_right_key is NULL\n");
-            goto r1;
         }
 
         //split new block successfully
         //add new node
-        void *new_left_key = serial_ctx->new_left_key;
-        void *new_right_key = serial_ctx->new_right_key;
+        void* new_left_key = serial_ctx->new_left_key;
+        void* new_right_key = serial_ctx->new_right_key;
 
         //add head level
         int level = spx_skp_level_rand();
 
-        //lock
         if (level > block_skp->level){
             for (i = block_skp->level + 1; i <= level; i++) update[i] = block_skp->head;
             block_skp->level = level;
@@ -290,18 +290,25 @@ static int spx_block_skp_insert(struct spx_block_skp *block_skp, void * key, voi
         block_skp->length++;
 
     } else {
+        if (serial_ctx->old_left_key != NULL)
+            block_skp->free_key(serial_ctx->old_left_key);
+        if (serial_ctx->old_right_key != NULL)
+            block_skp->free_key(serial_ctx->old_right_key);
+        if (serial_ctx->new_left_key != NULL)
+            block_skp->free_key(serial_ctx->new_left_key);
+        if (serial_ctx->new_right_key != NULL)
+            block_skp->free_key(serial_ctx->new_right_key);
         printf("split new block failed\n");
         goto r1;
     }
 
-    //unlock block_skp;
-    //pthread_mutex_unlock(&block_skp->mutex);
-    spx_block_serial_context_free(&serial_ctx);
+    //pthread_mutex_unlock(&target_node->mutex);
+    pthread_mutex_unlock(&block_skp->mutex);
+    spx_block_skp_serial_context_free(&serial_ctx);
     return 0;
 
 r1:
-    //pthread_mutex_unlock(&block_skp->mutex);
-    spx_block_serial_context_free(&serial_ctx);
+    spx_block_skp_serial_context_free(&serial_ctx);
     return -1;
 }/*}}}*/
 
@@ -395,7 +402,8 @@ static void spx_block_skp_insert_task(void *arg){/*{{{*/
     struct spx_block_skp_task* task = (struct spx_block_skp_task*)arg;
     
     if (task != NULL){
-                printf("exec task:%s\n", task->skp->name);
+        printf("exec task:%s\n", task->skp->name);
+        spx_block_skp_insert(task->skp, &task->key, task->value);
     }
 
     spx_block_skp_config_task_pool_push(task);
