@@ -38,7 +38,7 @@ extern "C" {
 
     struct spx_skp_node{
         void * key;
-        struct spx_skp_node_value * value;
+        struct spx_skp_node_value* value;
         int level;
         int size;
         struct spx_skp_node * next_node[0];

@@ -14,17 +14,38 @@
 #define SpxSkpSerialMaxLogSize 16777216//the max size of data file  16M
 #define SpxSkpSerialBaseSize 20//count(long) + offset(long) + version(int)
 #define SpxSkpSerialHeadSize 8388608//8M
-#define SpxSkpSerialItemSize 12 //Head block Item size: block_used_len(int) + block_Offset(long)
+#define SpxSkpSerialItemSize 13 //Head block Item size: block_type(char) + block_used_len(int) + block_Offset(long)
 #define SpxSkpMaxLogCount 1024
 #define SpxSkpSerialPathLen 255
 #define SpxSkpSerialBlockSize 512//block 64k 65535
+#define SpxSkpSerialCompactSize 10//
 
 /**********************************************/
 /* base_header_format: count|offset|version
- * head_item_format: block_used|block_offset
- * block_index_item_format: key_len|key|value_len|value
+ * head_item_format: block_type|block_used|block_offset
+ *
+ * comm_block_format: 
+ * ---------------------------------
+ * COMM: slice_type|key_len|key|value_len|value
+ * CPAT: slice_type|key_len|key|value_count|(value_len|value)->(value_len|value)->...(count)
+ * IDX_CPAT: slice_type|key_len|key|idx
+ * ---------------------------------
+ *
+ * compact_block_format:
+ * next_cpat_idx|(vl|v)->(vl|v)->...
  */
 /*********************************************/
+
+typedef enum{
+    COMM_SLICE = 0,
+    CPAT_SLICE = 1,
+    DEEP_CPAT_SLICE = 2
+} SliceType;
+
+typedef enum{
+    COMM_BLOCK = 0,
+    CPAT_BLOCK = 1
+} BlockType;
 
 static int g_file_count = 0; //single thread safe 
 static char g_file[SpxSkpSerialFileNameSize];
@@ -53,8 +74,9 @@ static int spx_block_skp_serial_value_node_query(char *path, ubyte_t *header, in
 
 //re_construct
 static void spx_skp_serial_split_meta_free(void *p);  
-static int64_t spx_block_skp_serial_apply_new_block(ubyte_t *header);
+static int64_t spx_block_skp_serial_apply_new_block(ubyte_t *header, CompactType type);
 static bool_t spx_skp_serial_is_index_available(int64_t index);
+static int64_t spx_block_skp_serial_detect_compact_block(struct spx_skp_node_value* value);
 static int64_t spx_block_skp_serial_split(char* path, ubyte_t* header, struct spx_block_skp* block_skp, ubyte_t* block_item, SpxSkpB2ODelegate byte2key, ubyte_t* fat_block, struct spx_block_skp_serial_context* ctx);
 
 struct spx_skp_serial_map_stat_list_node{
@@ -69,8 +91,10 @@ struct spx_skp_serial_map_stat_list{
 } spx_skp_serial_map_stat_list_head;
 
 struct spx_skp_serial_split_meta{
-    ubyte_t* kv_snapchat;
+    SliceType type;
     int len;
+    ubyte_t* value_snapchat;
+    int64_t idx;
 };
 
 /*
@@ -700,7 +724,7 @@ static bool_t spx_skp_serial_is_index_available(int64_t index){/*{{{*/
     return true;
 }/*}}}*/
 
-static int64_t spx_block_skp_serial_apply_new_block(ubyte_t* header){/*{{{*/
+static int64_t spx_block_skp_serial_apply_new_block(ubyte_t* header, BlockType type){/*{{{*/
     if (NULL == header){
         printf("header is NULL\n");
         return -1;
@@ -717,8 +741,9 @@ static int64_t spx_block_skp_serial_apply_new_block(ubyte_t* header){/*{{{*/
 
     spx_msg_i2b(header + 16, ++version);
     ubyte_t* item_ptr = spx_skp_serial_get_item(header, index);
-    spx_msg_i2b(item_ptr, 0);//set block_used_len
-    spx_msg_l2b(item_ptr + 4, offset); //set block offset
+    *item_ptr = type;
+    spx_msg_i2b(item_ptr + 1, 0);//set block_used_len
+    spx_msg_l2b(item_ptr + 5, offset); //set block offset
 
     spx_msg_l2b(header, ++count);//increase block count
     spx_msg_l2b(header + 8, offset + SpxSkpSerialBlockSize);//init new block offset 
@@ -747,63 +772,201 @@ static int spx_block_skp_serial_append(ubyte_t* block_item, ubyte_t* block_tail,
         return -1;
     }
 
-    spx_msg_i2b(block_tail, key_len);
-    memcpy(block_tail + 4, key_byte, key_len);
-    spx_msg_i2b(block_tail + 4 + key_len, value_len);
-    memcpy(block_tail + 4 + key_len + 4, value_byte, value_len);
+    if (CPAT_BLOCK == *block_item){
+        printf("append failed for CPAT_BLOCK\n");
+        return -1;
+    }
 
-    int block_len = spx_msg_b2i(block_item);
-    int item_len = 4 + key_len + 4 + value_len;
-    spx_msg_i2b(block_item, block_len + item_len); 
+    *block_tail = COMM_SLICE;
+    spx_msg_i2b(block_tail + 1, key_len);
+    memcpy(block_tail + 5, key_byte, key_len);
+    spx_msg_i2b(block_tail + 5 + key_len, value_len);
+    memcpy(block_tail + 5 + key_len + 4, value_byte, value_len);
+
+    int block_len = spx_msg_b2i(block_item + 1);
+    int item_len = 1 + 4 + key_len + 4 + value_len;
+    spx_msg_i2b(block_item + 1, block_len + item_len); 
 
     return 0;
 }/*}}}*/
 
-static int64_t spx_block_skp_serial_split(char*path, ubyte_t* header, struct spx_block_skp* block_skp, ubyte_t* block_item, SpxSkpB2ODelegate byte2key, ubyte_t* fat_block, struct spx_block_skp_serial_context* ctx){/*{{{*/
+static int64_t spx_block_skp_serial_detect_compact_block(struct spx_skp_node_value* value){/*{{{*/
+    int64_t compact_block = -1;
+    while (value != NULL){
+        struct spx_skp_serial_split_meta* val_meta = (struct spx_skp_serial_serial_split_meta*)value->value;
+        if (DEEP_CPAT_SLICE = val_meta->type){
+            compact_block = val_meta->idx;
+            break;
+        }
+        value = value->next_value;
+    }
+
+    return compact_block;
+}/*}}}*/
+
+static int spx_block_skp_serial_compact(struct spx_skp* sort_kv_skp, ubyte_t* header){
+    if (NULL == sort_kv_skp){
+        printf("sort_kv_skp is NULL in spx_block_skp_serial_compact\n");
+        return -1;
+    }
+
+    if (NULL == sort_kv_skp->head){
+        printf("head is NULL in spx_block_skp_serial_compact\n");
+        return -1;
+    }
+
+    cur_node = sort_kv_skp->head->next_node[0];
+    while (cur_node != NULL){
+        if (cur_node->size > SpxSkpSerialCompactSize){
+            int64_t compact_block = spx_block_skp_serial_detect_compact_block(cur_node->value);
+            if (-1 == compact_block){
+                compact_block = spx_block_skp_serial_apply_new_block(header, CPAT_BLOCK);
+                if (-1 == compact_block){
+                    printf("apply new block failed\n");
+                    continue;
+                }
+            }
+
+            struct spx_skp_node_value* value = cur_node->value;
+            while (value != NULL){
+                struct spx_skp_serial_split_meta* val_meta = (struct spx_skp_serial_serial_split_meta*)value->value;
+                if (COMM_SLICE == val_meta->type){
+                    ubyte_t* compact_block_item = spx_skp_serial_get_item(header, compact_block);
+                    int compact_block_len = spx_msg_b2i(compact_block_item + 1);
+                    int64_t compact_block_offset = spx_msg_b2l(compact_block_item + 5);
+                    struct spx_skp_serial_map_stat* compact_block_mst = spx_skp_serial_map(path, SpxSkpSerialBlockSize, compact_block_offset);  
+                    ubyte_t* compact_idx = compact_block_mst->mapped;
+
+                    spx_skp_serial_un_map(compact_block_mst);
+                }
+                value = value->next_value;
+            }
+        }
+        cur_node = cur_node->next_node[0];
+    }
+
+    return 0;
+}
+
+static int64_t spx_block_skp_serial_split(){
+
+}
+
+static int64_t spx_block_skp_serial_split(char* path, ubyte_t* header, struct spx_block_skp* block_skp, ubyte_t* block_item, SpxSkpB2ODelegate byte2key, ubyte_t* fat_block, struct spx_block_skp_serial_context* ctx){
     if (NULL == block_item){
         printf("old_block_item is NULL in spx_block_skp_serial_split\n");
         return -1;
     }
-    int block_len = spx_msg_b2i(block_item);
-    struct spx_skp* split_skp = spx_skp_new(block_skp->cmp_key, block_skp->cmp_value, "split_skp", block_skp->free_key, spx_skp_serial_split_meta_free);
-    if (NULL == split_skp){
-        printf("split_skp is NULL in spx_block_skp_serial_split\n");
+    if (CPAT_BLOCK == *block_item){
+        printf("split CAPT_BLOCK is not available\n")
+        return -1;
+    }
+    int block_len = spx_msg_b2i(block_item + 1);
+    struct spx_skp* sort_kv_skp = spx_skp_new(block_skp->cmp_key, block_skp->cmp_value, "sort_kv_skp", block_skp->free_key, spx_skp_serial_split_meta_free);
+    if (NULL == sort_kv_skp){
+        printf("sort_kv_skp is NULL in spx_block_skp_serial_split\n");
         return -1;
     }
 
     int off = 0;
     while (off < block_len){
         ubyte_t* idx = fat_block + off;
-        int key_len = spx_msg_b2i(idx);
-        void* key = byte2key(idx + 4, key_len); 
-        if (NULL == key){
-            printf("key is NULL in spx_block_skp_serial_split\n");
-            goto r1;
-        }
-        int value_len = spx_msg_b2i(idx + 4 + key_len);
-        int item_len = 4 + key_len + 4 + value_len;
-        struct spx_skp_serial_split_meta* split_meta = (struct spx_skp_serial_split_meta*) malloc(sizeof(*split_meta));
-        ubyte_t* kv_snapchat = (ubyte_t*) malloc(sizeof(ubyte_t) * item_len);
-        memcpy(kv_snapchat, idx, item_len);
-        split_meta->kv_snapchat = kv_snapchat;
-        split_meta->len = item_len;
+        SliceType type = *idx; 
+        switch (type){
+            case COMM_SLICE:
+                int key_len = spx_msg_b2i(idx + 1);
+                void* key = byte2key(idx + 5, key_len); 
+                if (NULL == key){
+                    printf("key is NULL in spx_block_skp_serial_split\n");
+                    goto r1;
+                }
 
-        spx_skp_insert(split_skp, key, split_meta);
-        off += item_len;
+                int key_slice_len = 4 + key_len;
+                int value_len = spx_msg_b2i(idx + 1 + key_slice_len);
+                int value_slice_len = value_len + 4;
+
+                struct spx_skp_serial_split_meta* split_meta = (struct spx_skp_serial_split_meta*) malloc(sizeof(*split_meta));
+                ubyte_t* value_snapchat = (ubyte_t*) malloc(sizeof(ubyte_t) * value_slice_len);
+                memcpy(value_snapchat, idx + 1 + key_slice_len, value_slice_len);
+                split_meta->type = type; 
+                split_meta->len = value_slice_len;
+                split_meta->value_snapchat = value_snapchat;
+
+                spx_skp_insert(sort_kv_skp, key, split_meta);
+                off += 1 + key_slice_len + value_slice_len;
+
+                break;
+            case CPAT_SLICE:
+                int key_len = spx_msg_b2i(idx + 1);
+                void* key = byte2key(idx + 5, key_len); 
+                if (NULL == key){
+                    printf("key is NULL in spx_block_skp_serial_split\n");
+                    goto r1;
+                }
+
+                int key_slice_len = 4 + key_len;
+                int val_cnt = spx_msg_b2i(idx + 1 + key_slice_len); 
+                ubyte_t* val_idx_start = idx + 1 + key_slice_len + 4;
+                int val_off = 0;
+                int i = 0;
+                for (i = 0; i < val_cnt; i++){
+                    ubyte_t* val_idx = val_idx_start + val_off;
+                    int val_len = spx_msg_b2i(val_idx);
+                    val_off += 4 + val_len;
+                    struct spx_skp_serial_split_meta* split_meta = (struct spx_skp_serial_split_meta*) malloc(sizeof(*split_meta));
+                    ubyte_t* value_snapchat = (ubyte_t*) malloc(sizeof(ubyte_t) * val_len);
+                    memcpy(value_snapchat, val_idx, val_len);
+                    split_meta->type = type; 
+                    split_meta->len = val_len;
+                    split_meta->value_snapchat = value_snapchat;
+                    spx_skp_insert(sort_kv_skp, key, split_meta);
+                }
+
+                off += 1 + key_slice_len + 4 + val_off;
+
+                break;
+            case DEEP_CPAT_SLICE:
+                int key_len = spx_msg_b2i(idx + 1);
+                void* key = byte2key(idx + 5, key_len);
+                if (NULL == key){
+                    printf("key is NULL in spx_block_skp_serial_split\n");
+                    goto r1;
+                }
+
+                int key_slice_len = 4 + key_len;
+                int64_t cpat_block_idx_head = spx_msg_b2l(idx + 1 + key_slice_len);
+                int64_t cpat_block_idx_tail = spx_msg_b2l(idx + 1 + key_slice_len + 8);
+
+                struct spx_skp_serial_split_meta* split_meta = (struct spx_skp_serial_split_meta*) malloc(sizeof(*split_meta));
+                ubyte_t* idx_snapchat = (ubyte_t*) malloc(sizeof(ubyte_t) * 16);
+                memcpy(idx_snapchat, idx + 1 + key_slice_len, 16);
+                split_meta->type = type; 
+                split_meta->len = 16;
+                split_meta->value_snapchat = idx_snapchat;
+                split_meta->idx = cpat_block_idx_tail;
+
+                spx_skp_insert(sort_kv_skp, key, split_meta);
+                off += 1 + key_slice_len + 16;
+
+                break;
+            default:
+                printf("not support slice_type:%d\n", type);
+                goto r1;
+        }
     }
 
 
-    struct spx_skp_node* cur_node = split_skp->head;
+    struct spx_skp_node* cur_node = sort_kv_skp->head;
     if (NULL == cur_node){
         printf("sklit_skp->head is NULL\n");
         goto r1;
     }
 
-    int split_len = split_skp->length/2;
+    int split_len = sort_kv_skp->length/2;
     int64_t new_block_idx = spx_block_skp_serial_apply_new_block(header);
     ubyte_t* new_block_item = spx_skp_serial_get_item(header, new_block_idx);
-    int new_block_len = spx_msg_b2i(new_block_item);
-    int64_t new_block_offset = spx_msg_b2l(new_block_item + 4);
+    int new_block_len = spx_msg_b2i(new_block_item + 1);
+    int64_t new_block_offset = spx_msg_b2l(new_block_item + 5);
     struct spx_skp_serial_map_stat* new_block_mst = spx_skp_serial_map(path, SpxSkpSerialBlockSize, new_block_offset);  
 
     int count = 0;
@@ -862,7 +1025,7 @@ static int64_t spx_block_skp_serial_split(char*path, ubyte_t* header, struct spx
     int new_left_key_len = spx_msg_b2i(new_left_kv_snapchat);
     ctx->new_left_key = byte2key(new_left_kv_snapchat + 4, new_left_key_len); 
 
-    while (count < (int)split_skp->length){
+    while (count < (int)sort_kv_skp->length){
         cur_node = cur_node->next_node[0];
         if (NULL == cur_node){
             printf("cur_node is NULL\n");
@@ -895,13 +1058,13 @@ static int64_t spx_block_skp_serial_split(char*path, ubyte_t* header, struct spx
 
     spx_skp_serial_un_map(new_block_mst);
 
-    spx_skp_destroy(split_skp);
+    spx_skp_destroy(sort_kv_skp);
     return new_block_idx;
 r1:
     printf("split failed\n");
-    spx_skp_destroy(split_skp);
+    spx_skp_destroy(sort_kv_skp);
     return -1;
-}/*}}}*/
+}
 
 int64_t spx_block_skp_serial(struct spx_block_skp* block_skp, void* key, void* value, int64_t index, struct spx_block_skp_serial_context* ctx){/*{{{*/
     if (NULL == block_skp){
@@ -954,12 +1117,14 @@ int64_t spx_block_skp_serial(struct spx_block_skp* block_skp, void* key, void* v
     int item_len = 4 + key_len + 4 + value_len;
     if (item_len > (SpxSkpSerialBlockSize/2)){
         printf("the length of key and value is out of range\n");
+        free(key_byte);
+        free(value_byte);
         return -1;
     }
 
     if (-1 == index){
         //need a new block
-        index = spx_block_skp_serial_apply_new_block(header);
+        index = spx_block_skp_serial_apply_new_block(header, COMM_BLOCK);
         if (-1 == index){
             free(key_byte);
             free(value_byte);
@@ -973,8 +1138,9 @@ int64_t spx_block_skp_serial(struct spx_block_skp* block_skp, void* key, void* v
     }
 
     ubyte_t* block_item = spx_skp_serial_get_item(header, index);
-    int block_len = spx_msg_b2i(block_item);
-    int64_t block_offset = spx_msg_b2l(block_item + 4);
+    CompactType type = *block_item;
+    int block_len = spx_msg_b2i(block_item + 1);
+    int64_t block_offset = spx_msg_b2l(block_item + 5);
     int free_block = SpxSkpSerialBlockSize - block_len;
 
     struct spx_skp_serial_map_stat* block_mst = spx_skp_serial_map(path, SpxSkpSerialBlockSize, block_offset);  
@@ -988,13 +1154,13 @@ int64_t spx_block_skp_serial(struct spx_block_skp* block_skp, void* key, void* v
             goto r1;
         }
 
-        block_len = spx_msg_b2i(block_item);
+        block_len = spx_msg_b2i(block_item + 1);
         if (block_skp->cmp_key(key, ctx->old_right_key) <= 0)
             spx_block_skp_serial_append(block_item, block_mst->mapped + block_len, key_len, key_byte, value_len, value_byte);
         else {
             ubyte_t* new_block_item = spx_skp_serial_get_item(header, ret);
-            int new_block_len = spx_msg_b2i(new_block_item);
-            int64_t new_block_offset = spx_msg_b2l(new_block_item + 4);
+            int new_block_len = spx_msg_b2i(new_block_item + 1);
+            int64_t new_block_offset = spx_msg_b2l(new_block_item + 5);
             struct spx_skp_serial_map_stat* new_block_mst = spx_skp_serial_map(path, SpxSkpSerialBlockSize, new_block_offset);  
             spx_block_skp_serial_append(new_block_item, new_block_mst->mapped + new_block_len, key_len, key_byte, value_len, value_byte);
             spx_skp_serial_un_map(new_block_mst);
