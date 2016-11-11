@@ -113,7 +113,7 @@ int spx_block_skp_node_insert(struct spx_block_skp *block_skp, struct spx_block_
 }/*}}}*/
 
 //create a new spx_block_skp
-struct spx_block_skp * spx_block_skp_new(SpxSkpType key_type, SpxSkpType value_type, CmpDelegate cmp_key, CmpDelegate cmp_value, const char * block_skp_name, FreeDelegate free_key, FreeDelegate free_value){/*{{{*/
+struct spx_block_skp * spx_block_skp_new(SpxSkpType key_type, SpxSkpType value_type, CmpDelegate cmp_key, CmpDelegate cmp_value, const char* block_skp_name, FreeDelegate free_key, FreeDelegate free_value){/*{{{*/
     struct spx_block_skp * block_skp = (struct spx_block_skp*) malloc(sizeof(struct spx_block_skp));
     if (block_skp == NULL){
         printf("malloc block_skp failed\n");

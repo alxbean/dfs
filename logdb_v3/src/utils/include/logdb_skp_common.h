@@ -27,6 +27,13 @@ extern "C" {
     int cmp_double(const void *a, const void *b);
     int cmp_str(const void *a, const void *b);
 
+    //copy method
+    void* copy_int(void *a);
+    void* copy_long(void *a);
+    void* copy_float(void *a);
+    void* copy_double(void *a);
+    void* copy_str(void *a);
+
     //for saving query result set 
     struct spx_skp_query_result_node{
         void *value;

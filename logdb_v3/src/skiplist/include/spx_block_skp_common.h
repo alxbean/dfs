@@ -36,7 +36,6 @@ extern "C" {
     //cmp method
     int cmp_md(const void *a, const void *b);
 
-
 #ifdef __cplusplus
 }
 #endif
