@@ -299,6 +299,7 @@ static int spx_block_skp_insert(struct spx_block_skp* block_skp, void** p_key, v
         if (serial_ctx->new_right_key != NULL)
             block_skp->free_key(serial_ctx->new_right_key);
         printf("split new block failed\n");
+        pthread_mutex_unlock(&block_skp->mutex);
         goto r1;
     }
 

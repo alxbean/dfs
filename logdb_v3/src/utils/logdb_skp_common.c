@@ -6,6 +6,7 @@
 ************************************************************************/
 #include "logdb_skp_common.h"
 #include <string.h>
+#include <stdlib.h>
 
 /*
  * public cmp method
@@ -39,25 +40,25 @@ int cmp_str(const void *a, const void *b){/*{{{*/
 
  void* copy_int(void *a){/*{{{*/
      int *b = (int *) malloc(sizeof(int));
-     *b = *a;
+     *b = *(int*)a;
      return b;
  }/*}}}*/
 
  void* copy_long(void *a){/*{{{*/
      long *b = (long *) malloc(sizeof(long));
-     *b = *a;
+     *b = *(long*)a;
      return b;
  }/*}}}*/
 
  void* copy_float(void *a){/*{{{*/
      float *b = (float *) malloc(sizeof(float));
-     *b = *a;
+     *b = *(float*)a;
      return b;
  }/*}}}*/
 
  void* copy_double(void *a){/*{{{*/
      double *b = (double *) malloc(sizeof(double));
-     *b = *a;
+     *b = *(double*)a;
      return b;
  }/*}}}*/
 

@@ -170,17 +170,17 @@ int cmp_md(const void *a, const void *b){/*{{{*/
         return 1;
     else if (strlen(mda->file) < strlen(mdb->file))
         return -1;
-    else{
+    else {
         if (strcmp(mda->file, mdb->file) > 0)
             return 1;
         else if (strcmp(mda->file, mdb->file) < 0)
             return -1;
-        else{
+        else {
             if (mda->off > mdb->off)
                 return 1; 
             else if (mda->off < mdb->off)
                 return -1;
-            else{
+            else {
                 if (mda->len > mdb->len)
                     return 1;
                 else if (mda->len < mdb->len)

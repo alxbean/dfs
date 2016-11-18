@@ -182,7 +182,7 @@ int main(int argc, char **argv){/*{{{*/
     spx_block_skp_config_pool_init();
     spx_block_skp_config_task_pool_init();
     //thread_pool_init(spx_block_skp_count_config_index());
-    thread_pool_init(1);
+    thread_pool_init(20);
 
     struct server_config * conf = (struct server_config *) spx_alloc_alone(sizeof(*conf), &err);    
     conf->ip = c->ip;
