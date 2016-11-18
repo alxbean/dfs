@@ -1191,7 +1191,7 @@ static int64_t spx_block_skp_serial_process_fat_block(char* path, ubyte_t* heade
                     ubyte_t* val_idx_start = idx + 1 + key_slice_len + 4;
                     int val_off = 0;
                     int i = 0;
-        printf("CCCCCCCCCCCCCCCCCCCC111111111111111111111\n");
+        printf("CCCCCCCCCCCCCCCCCCCC111111111111111111111 key_len=%d, val_cnt=%d\n", key_len, val_cnt);
                     for (i = 0; i < val_cnt; i++){
                         void* key = byte2key(idx + 5, key_len); 
                         if (NULL == key){
@@ -1201,15 +1201,17 @@ static int64_t spx_block_skp_serial_process_fat_block(char* path, ubyte_t* heade
 
         printf("CCCCCCCCCCCCCCCCCCCC22222222222222222222222\n");
                         ubyte_t* val_idx = val_idx_start + val_off;
+        printf("CCCCCCCCCCCCCCCCCCCC3333333333333333333333333333333333\n");
                         int val_len = spx_msg_b2i(val_idx);
                         int value_slice_len = val_len + 4;
                         val_off += value_slice_len;
+        printf("CCCCCCCCCCCCCCCCCCCC44444444444444444444444444444: len=%d\n", val_len);
                         ubyte_t* key_snapchat = (ubyte_t*) malloc(sizeof(ubyte_t) * key_slice_len);
                         memcpy(key_snapchat, idx + 1, key_slice_len);
                         ubyte_t* value_snapchat = (ubyte_t*) malloc(sizeof(ubyte_t) * value_slice_len);
                         memcpy(value_snapchat, val_idx, value_slice_len);
+        printf("CCCCCCCCCCCCCCCCCCCC55555555555555555555555555555\n");
 
-        printf("CCCCCCCCCCCCCCCCCCCC3333333333333333333333333333333333\n");
                         struct spx_skp_serial_split_meta* split_meta = (struct spx_skp_serial_split_meta*) malloc(sizeof(*split_meta));
                         split_meta->type = type; 
                         split_meta->key_slice_len = key_slice_len;
@@ -1217,7 +1219,6 @@ static int64_t spx_block_skp_serial_process_fat_block(char* path, ubyte_t* heade
                         split_meta->value_slice_len = value_slice_len;
                         split_meta->value_snapchat = value_snapchat;
                         spx_skp_insert(sort_kv_skp, key, split_meta);
-        printf("CCCCCCCCCCCCCCCCCCCC44444444444444444444444444444\n");
                     }
 
                     off += 1 + key_slice_len + 4 + val_off;
