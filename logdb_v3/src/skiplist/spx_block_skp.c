@@ -4,7 +4,6 @@
 > Mail: shuaixiang@yuewen.com
 > Created Time: Mon 07 Sep 2015 03:13:11 AM UTC
 ************************************************************************/
-#include <ev.h>
 #include <time.h>
 #include "spx_block_skp.h"
 #include "spx_block_skp_config.h"
