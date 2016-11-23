@@ -46,7 +46,7 @@ static void *msgpk_tree_metadata_copy(void *src){/*{{{*/
 /*
  * query method
  */
-static int msgpk_tree_level_equal_query(void *query_key, struct spx_block_skp *block_skp, struct spx_skp_query_result* res){
+static int msgpk_tree_level_equal_query(void *query_key, struct spx_block_skp *block_skp, struct spx_skp_query_result* res){/*{{{*/
     if (NULL == query_key){
         printf("query_key is NULL in msgpk_tree_level_equal_query\n");
         return -1;
@@ -60,7 +60,7 @@ static int msgpk_tree_level_equal_query(void *query_key, struct spx_block_skp *b
     spx_block_skp_query(block_skp, query_key, res);
 
     return 0;
-}
+}/*}}}*/
 
 static void msgpk_tree_feed_query_result(struct spx_skp *skp, int *uni_count, struct spx_skp_query_result *res){/*{{{*/
     if (NULL == res){

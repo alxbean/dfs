@@ -105,10 +105,11 @@ long server_handler(size_t req_size, char * request, char **response){/*{{{*/
 
         msgpk_build_tree_array_end(ctx, md_cnt);
         spx_skp_serial_metadata_list_free(md_lst, true);
-        printf("\n======================response tree==================\n");
-        msgpk_tree_print(ctx->root, 0);
+        printf("==================> md_cnt:%d\n", md_cnt);
+        //printf("\n======================response tree==================\n");
+        //msgpk_tree_print(ctx->root, 0);
         struct pack_buffer *pb = msgpk_message_packer(ctx->root->child);
-        msgpk_print_hex(pb->buffer, pb->off);
+        //msgpk_print_hex(pb->buffer, pb->off);
         printf("\n----------------Response----------------\n");
         msgpk_build_free(ctx);
 
