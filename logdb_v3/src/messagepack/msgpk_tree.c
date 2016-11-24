@@ -339,7 +339,6 @@ char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){
                 continue;
         }
 
-
         struct logdb_queue* task_queue = spx_block_skp_config_task_queue_dispatcher(index_name);
         if (NULL == task_queue){
             printf("spx_block_skp_task_queue_dispatcher failed, task_queue is NULL\n");
