@@ -56,9 +56,9 @@ static long response_set(struct pack_buffer *pb,  char **response){/*{{{*/
     return off;
 }/*}}}*/
 
-long server_handler(size_t req_size, char * request, char **response){/*{{{*/
+long server_handler(size_t req_size, char* request, char** response){/*{{{*/
    // printf("\n=====================unpacking==================\n");
-    struct msgpk_object *obj = msgpk_message_unpacker((ubyte_t*)request, req_size);
+    struct msgpk_object* obj = msgpk_message_unpacker((ubyte_t*)request, req_size);
     //msgpk_tree_print_json(obj);
     //printf("\n====================printTree==================\n");
     //msgpk_tree_print(obj, 0);
@@ -96,7 +96,7 @@ long server_handler(size_t req_size, char * request, char **response){/*{{{*/
             struct spx_skp_serial_metadata *md = tmd->md;
             char unid[100];
             spx_skp_serial_gen_unid(md, unid, sizeof(unid));
-            ubyte_t *data = spx_skp_serial_data_reader(md);
+            ubyte_t* data = spx_skp_serial_data_reader(md);
             msgpk_build_tree_bin(ctx, data, md->len);
             free(data);//need to free, or it will leak memory
             md_cnt++;

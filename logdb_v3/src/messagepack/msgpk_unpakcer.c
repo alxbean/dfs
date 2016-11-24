@@ -994,7 +994,7 @@ struct msgpk_object * msgpk_message_unpacker(ubyte_t *buf, int len){
             break;
     }
 
-    struct msgpk_object * root = ctx->root;
+    struct msgpk_object* root = ctx->root;
     free(ctx);
 
     return root;

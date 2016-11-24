@@ -278,7 +278,7 @@ static void msgpk_tree_query_exec(struct msgpk_object *obj, struct spx_skp *pare
     }
 }/*}}}*/
 
-struct spx_skp_serial_metadata_list *msgpk_tree_query(struct msgpk_object * obj){/*{{{*/
+struct spx_skp_serial_metadata_list* msgpk_tree_query(struct msgpk_object * obj){/*{{{*/
     if(NULL == obj->child){
         printf("obj->child is NULL\n");
         return NULL;
@@ -290,7 +290,7 @@ struct spx_skp_serial_metadata_list *msgpk_tree_query(struct msgpk_object * obj)
     return msgpk_tree_merge_union(root_skp); 
 }/*}}}*/
 
-char *msgpk_tree_add(struct msgpk_object *root, size_t req_size, char *request){/*{{{*/
+char* msgpk_tree_add(struct msgpk_object* root, size_t req_size, char* request){/*{{{*/
     struct spx_block_skp_index *tmp_idx = spx_block_skp_config_load_index(); 
     err_t err = 0;
     if (NULL == tmp_idx){

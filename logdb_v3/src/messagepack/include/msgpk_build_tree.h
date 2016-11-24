@@ -61,10 +61,10 @@ extern "C" {
     void msgpk_build_map_int_float(struct tree_context *ctx, int k, float v);
     void msgpk_build_map_int_double(struct tree_context *ctx, int k, double v);
     void msgpk_build_map_int_string(struct tree_context *ctx, int k, string_t v, size_t vlen);
-void msgpk_build_map_int_bin(struct tree_context *ctx, int k, ubyte_t *v, size_t vlen);
+    void msgpk_build_map_int_bin(struct tree_context *ctx, int k, ubyte_t *v, size_t vlen);
 
     //Query Tree
-    struct msgpk_object * msgpk_tree_find_rule_node(struct msgpk_object *root , int argc, ...);
+    struct msgpk_object* msgpk_tree_find_rule_node(struct msgpk_object *root , int argc, ...);
     void msgpk_tree_print(struct msgpk_object *obj, int space);
     void msgpk_tree_print_json(struct msgpk_object *obj);
     //free tree
