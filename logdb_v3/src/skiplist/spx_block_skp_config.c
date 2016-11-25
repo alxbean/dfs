@@ -13,7 +13,7 @@
 #include "logdb_map.h"
 #include "spx_block_skp.h"
 
-#define SpxSkpIndexConf "../skiplist/config/index.config" 
+#define SpxSkpIndexConf "./skiplist/config/index.config" 
 #define TaskPoolSize 10 
 
 struct logdb_map* g_task_queue = NULL;

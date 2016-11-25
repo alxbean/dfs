@@ -104,22 +104,22 @@ int thread_pool_destroy(){/*{{{*/
 }/*}}}*/
 
 static void *thread_routine(void *arg){/*{{{*/
-    printf("starting thread 0x%x\n", (unsigned int )pthread_self());
+    logdb_debug("starting thread 0x%x\n", (unsigned int )pthread_self());
     while (1){
         pthread_mutex_lock(&(g_thread_pool->task_queue_lock));
 
         while (0 == g_thread_pool->cur_queue_size && false == g_thread_pool->shutdown){
-            printf("thread 0x%x is waitting\n", (unsigned int)pthread_self());
+            logdb_debug("thread 0x%x is waitting\n", (unsigned int)pthread_self());
             pthread_cond_wait(&(g_thread_pool->task_queue_ready), &(g_thread_pool->task_queue_lock));
         }
 
         if (true == g_thread_pool->shutdown){
             pthread_mutex_unlock(&(g_thread_pool->task_queue_lock));
-            printf("thread 0x%x will exit\n", (unsigned int)pthread_self());
+            logdb_debug("thread 0x%x will exit\n", (unsigned int)pthread_self());
             pthread_exit(NULL);
         }
 
-        printf("thread 0x%x is starting to work\n", (unsigned int )pthread_self());
+        logdb_debug("thread 0x%x is starting to work\n", (unsigned int )pthread_self());
 
         assert(g_thread_pool->cur_queue_size != 0);
         assert(g_thread_pool->task_queue_head != NULL);
@@ -133,7 +133,7 @@ static void *thread_routine(void *arg){/*{{{*/
         (*(task->process))(task->arg);
         free(task);
         task = NULL;
-        printf("thread task size:%d\n", g_thread_pool->cur_queue_size);
+        logdb_debug("thread task size:%d\n", g_thread_pool->cur_queue_size);
     }
 }/*}}}*/
 

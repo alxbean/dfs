@@ -275,7 +275,7 @@ int spx_skp_destroy(struct spx_skp * skp)/*{{{*/
         printf("skp in spx_skp_destroy is NULL\n");
         return -1;
     }
-    printf("destroy skp:%s\n", skp->name);
+    //printf("destroy skp:%s\n", skp->name);
     struct spx_skp_node *tmp_skp_node = skp->head;
     while (tmp_skp_node){
         struct spx_skp_node *skp_free_node = tmp_skp_node;

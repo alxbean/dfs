@@ -402,7 +402,7 @@ static void spx_block_skp_insert_task(void *arg){/*{{{*/
     struct spx_block_skp_task* task = (struct spx_block_skp_task*)arg;
     
     if (task != NULL){
-        printf("exec task:%s\n", task->skp->name);
+        logdb_debug("exec task:%s\n", task->skp->name);
         spx_block_skp_insert(task->skp, &task->key, task->value);
     }
 

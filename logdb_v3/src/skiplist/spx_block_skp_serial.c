@@ -12,9 +12,9 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define SpxSkpSerialMaxLogSize 16777216//the max size of data file  16M
+#define SpxSkpSerialMaxLogSize 67108864//the max size of data file  64M
 #define SpxSkpSerialBaseSize 20//count(long) + offset(long) + version(int)
-#define SpxSkpSerialHeadSize 8388608//8M
+#define SpxSkpSerialHeadSize 33554432//32M
 #define SpxSkpSerialItemSize 13 //Head block Item size: block_type(char) + block_used_len(int) + block_offset(long)
 #define SpxSkpMaxLogCount 1024
 #define SpxSkpSerialPathLen 255
@@ -222,17 +222,17 @@ static int spx_skp_serial_build_time_dir(char *path){/*{{{*/
 
     snprintf(dir_tmp1, sizeof(dir_tmp1), "%s/%d", dir_tmp0, 1900 + p->tm_year);
     if (-1 == spx_skp_serial_is_dir_exist(dir_tmp1)){
-        printf("mkdir %s failed", dir_tmp1);
+        printf("mkdir %s failed\n", dir_tmp1);
         return -1;
     }
     snprintf(dir_tmp2, sizeof(dir_tmp2), "%s/%02d", dir_tmp1, p->tm_mon + 1);
     if (-1 == spx_skp_serial_is_dir_exist(dir_tmp2)){
-        printf("mkdir %s failed", dir_tmp2);
+        printf("mkdir %s failed\n", dir_tmp2);
         return -1;
     }
     snprintf(dir_tmp3, sizeof(dir_tmp3), "%s/%02d", dir_tmp2, p->tm_mday);
     if (-1 == spx_skp_serial_is_dir_exist(dir_tmp3)){
-        printf("mkdir %s failed", dir_tmp3);
+        printf("mkdir %s failed\n", dir_tmp3);
         return -1;
     }
 
@@ -466,22 +466,6 @@ int spx_skp_serial_metadata_list_free(struct spx_skp_serial_metadata_list * md_l
     return 0;
 }/*}}}*/
 
-static struct spx_skp_serial_metadata *spx_skp_serial_write_data(FILE* fp, char* file, const ubyte_t *data, size_t len){/*{{{*/
-    //printf("writing data...\n");
-    fwrite(data, sizeof(char), len, fp);
-    //fflush(fp);
-    //printf("writing data done\n");
-
-    struct spx_skp_serial_metadata *md = (struct spx_skp_serial_metadata*) malloc(sizeof(struct spx_skp_serial_metadata));
-    int file_len = strlen(file);
-    strncpy(md->file, file, file_len);
-    *(md->file + file_len) = '\0';
-    md->len = len;
-    md->off = ftell(fp) - len;
-    
-    return md;
-}/*}}}*/
-
 static int spx_skp_serial_which_file(char *file){/*{{{*/
     char path[SpxSkpSerialFileNameSize];
     char path1[SpxSkpSerialFileNameSize];
@@ -503,6 +487,22 @@ static int spx_skp_serial_which_file(char *file){/*{{{*/
 
     snprintf(file, SpxSkpSerialFileNameSize, "%s/%04d.log", time_path, g_file_count);
     return 0;
+}/*}}}*/
+
+static struct spx_skp_serial_metadata *spx_skp_serial_write_data(FILE* fp, char* file, const ubyte_t *data, size_t len){/*{{{*/
+    //printf("writing data...\n");
+    fwrite(data, sizeof(char), len, fp);
+    //fflush(fp);
+    //printf("writing data done\n");
+
+    struct spx_skp_serial_metadata *md = (struct spx_skp_serial_metadata*) malloc(sizeof(struct spx_skp_serial_metadata));
+    int file_len = strlen(file);
+    strncpy(md->file, file, file_len);
+    *(md->file + file_len) = '\0';
+    md->len = len;
+    md->off = ftell(fp) - len;
+    
+    return md;
 }/*}}}*/
 
 //ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len){/*{{{*/
@@ -561,7 +561,7 @@ struct spx_skp_serial_metadata* spx_skp_serial_data_writer2md(const ubyte_t *dat
             return NULL;
         }
     }
-
+    
     struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(g_fp, g_file, data, len);
     if(NULL == md){
         printf("write data error\n");

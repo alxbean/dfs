@@ -17,6 +17,7 @@ extern "C" {
     #include <sys/types.h>
     #include <pthread.h>
     #include "spx_types.h"
+    #include "logdb_debug.h"
 
     //#ifndef bool_t
     //    typedef enum {
