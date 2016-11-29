@@ -14,12 +14,12 @@
 
 #define SpxSkpSerialMaxLogSize 67108864//the max size of data file  64M
 #define SpxSkpSerialBaseSize 20//count(long) + offset(long) + version(int)
-#define SpxSkpSerialHeadSize 33554432//32M
+#define SpxSkpSerialHeadSize 134217728//128M
 #define SpxSkpSerialItemSize 13 //Head block Item size: block_type(char) + block_used_len(int) + block_offset(long)
 #define SpxSkpMaxLogCount 1024
 #define SpxSkpSerialPathLen 255
 #define SpxSkpSerialCommBlockSize 65535//block 64k 65535
-#define SpxSkpSerialCpatBlockSize 512//block 64k 65535
+#define SpxSkpSerialCpatBlockSize 128//block 64k 65535
 #define SpxSkpSerialCompactSize 3//
 #define SpxSkpSerialIdxLen 8
 
@@ -794,7 +794,7 @@ static int64_t spx_block_skp_serial_apply_new_block(char* path, ubyte_t* header,
 
     if (CPAT_BLOCK == type){
         spx_msg_l2b(header + 8, offset + SpxSkpSerialCpatBlockSize);//init new compact block offset 
-        struct spx_skp_serial_map_stat* new_compact_block_mst = spx_skp_serial_map(path, SpxSkpSerialCommBlockSize, offset);  
+        struct spx_skp_serial_map_stat* new_compact_block_mst = spx_skp_serial_map(path, SpxSkpSerialCpatBlockSize, offset);  
         spx_msg_l2b(new_compact_block_mst->mapped, -1);//init
         spx_msg_i2b(new_compact_block_mst->mapped + 8, 0);//init
         spx_msg_i2b(item_ptr + 1, 12);//next_compact_idx + count

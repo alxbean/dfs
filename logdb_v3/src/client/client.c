@@ -42,64 +42,64 @@ void insert_test(void* q){
     for (i = 0; i < count; i++){
         struct tree_context* ctx = msgpk_build_init();
 
-        //age
-        msgpk_build_map_string_int(ctx, "age", 3, rand_int(120));
+        ////age
+        //msgpk_build_map_string_int(ctx, "age", 3, rand_int(120));
 
         //name
         char *name = rand_str(5);
         msgpk_build_map_string_string(ctx, "name", 4, name, strlen(name));
 
-        //city
-        char *city = rand_str(7);
-        msgpk_build_map_string_string(ctx, "city", 4, city, strlen(city));
+        ////city
+        //char *city = rand_str(7);
+        //msgpk_build_map_string_string(ctx, "city", 4, city, strlen(city));
 
-        //hobbies
-        char *hobbies = rand_str(4);
-        msgpk_build_map_string_string(ctx, "hobbies", 7, hobbies, strlen(hobbies));
+        ////hobbies
+        //char *hobbies = rand_str(4);
+        //msgpk_build_map_string_string(ctx, "hobbies", 7, hobbies, strlen(hobbies));
 
-        //idol
-        char *idol = rand_str(3);
-        msgpk_build_map_string_string(ctx, "idol", 4, idol, strlen(idol));
+        ////idol
+        //char *idol = rand_str(3);
+        //msgpk_build_map_string_string(ctx, "idol", 4, idol, strlen(idol));
 
-        //food
-        char *food = rand_str(6);
-        msgpk_build_map_string_string(ctx, "food", 4, food, strlen(food));
+        ////food
+        //char *food = rand_str(6);
+        //msgpk_build_map_string_string(ctx, "food", 4, food, strlen(food));
 
-        //father
-        char *father = rand_str(4);
-        msgpk_build_map_string_string(ctx, "father", 6, father, strlen(father));
+        ////father
+        //char *father = rand_str(4);
+        //msgpk_build_map_string_string(ctx, "father", 6, father, strlen(father));
 
-        //mother
-        char *mother = rand_str(4);
-        msgpk_build_map_string_string(ctx, "mother", 6, mother, strlen(mother));
+        ////mother
+        //char *mother = rand_str(4);
+        //msgpk_build_map_string_string(ctx, "mother", 6, mother, strlen(mother));
 
-        //spouse
-        char *spouse = rand_str(4);
-        msgpk_build_map_string_string(ctx, "spouse", 6, spouse, strlen(spouse));
+        ////spouse
+        //char *spouse = rand_str(4);
+        //msgpk_build_map_string_string(ctx, "spouse", 6, spouse, strlen(spouse));
 
-        //animal
-        char *animal = rand_str(3);
-        msgpk_build_map_string_string(ctx, "animal", 6, animal, strlen(animal));
+        ////animal
+        //char *animal = rand_str(3);
+        //msgpk_build_map_string_string(ctx, "animal", 6, animal, strlen(animal));
 
-        //plant
-        char *plant = rand_str(4);
-        msgpk_build_map_string_string(ctx, "plant", 5, plant, strlen(plant));
+        ////plant
+        //char *plant = rand_str(4);
+        //msgpk_build_map_string_string(ctx, "plant", 5, plant, strlen(plant));
 
-        //weixin
-        char *weixin = rand_str(8);
-        msgpk_build_map_string_string(ctx, "weixin", 6, weixin, strlen(weixin));
+        ////weixin
+        //char *weixin = rand_str(8);
+        //msgpk_build_map_string_string(ctx, "weixin", 6, weixin, strlen(weixin));
 
-        //sex
-        char sex[1]; 
-        sex[0] = '0' + rand_int(2);
-        msgpk_build_map_string_string(ctx, "sex", 3, sex, 1);
+        ////sex
+        //char sex[1]; 
+        //sex[0] = '0' + rand_int(2);
+        //msgpk_build_map_string_string(ctx, "sex", 3, sex, 1);
 
-        //address
-        char *addr = rand_str(9);
-        msgpk_build_map_string_string(ctx, "address", 7, addr, strlen(addr));
+        ////address
+        //char *addr = rand_str(9);
+        //msgpk_build_map_string_string(ctx, "address", 7, addr, strlen(addr));
 
-        //score
-        msgpk_build_map_string_int(ctx, "score", 5, rand_int(100));
+        ////score
+        //msgpk_build_map_string_int(ctx, "score", 5, rand_int(100));
 
         
         //msgpk_tree_print_json(ctx->root);
@@ -108,7 +108,7 @@ void insert_test(void* q){
         //printf("age:%d\n", obj->value.int32_val);
         
         pthread_mutex_lock(&mutex);
-        printf("thread:%ld ======================================>%d\n", pthread_self(), total++);
+        logdb_debug("thread:%ld ======================================>%d\n", pthread_self(), total++);
         char* unid = msgpk_tree_add(ctx->root, strlen(request), (char*)request);
         pthread_mutex_unlock(&mutex);
         free(unid);
@@ -147,7 +147,7 @@ int main(){
         if (pthread_create(&tid[i], NULL, (void*)insert_test, &count) != 0){
             logdb_debug("pthread_create failed\n");
         }
-        printf("------------------------------------------------->thread:%d start to  work\n", i);
+        logdb_debug("------------------------------------------------->thread:%d start to  work\n", i);
     }
 
 
