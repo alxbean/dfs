@@ -1384,7 +1384,7 @@ int64_t spx_block_skp_serial(struct spx_block_skp* block_skp, void* key, void* v
 
     struct spx_skp_serial_map_stat* block_mst = spx_skp_serial_map(path, SpxSkpSerialCommBlockSize, block_offset);  
 
-    if (free_block >= item_len){
+    if (free_block > item_len){
         spx_block_skp_serial_append(block_item, block_mst->mapped + block_len, key_len, key_byte, value_len, value_byte);
     } else {
         ret = spx_block_skp_serial_process_fat_block(path, header, block_skp, block_item, byte2key, block_mst->mapped, ctx);

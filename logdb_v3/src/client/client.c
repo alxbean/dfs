@@ -16,7 +16,7 @@
 #include "thread_pool.h"
 #include "logdb_debug.h"
 
-#define ThreadCount 20
+#define ThreadCount 1
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static int rand_int(int base){
@@ -25,7 +25,7 @@ static int rand_int(int base){
 }
 
 static char* rand_str(int len){
-    char* str = (char*) malloc(sizeof(char) * len); 
+    char* str = (char*) calloc(1, sizeof(char) * (len + 1)); 
     int i;
     for (i = 0; i < len; i++){
         *(str + i) = 'a' + rand_int(26);
@@ -46,7 +46,8 @@ void insert_test(void* q){
         //msgpk_build_map_string_int(ctx, "age", 3, rand_int(120));
 
         //name
-        char *name = rand_str(5);
+        char *name = rand_str(7);
+        printf("name =================================>%s\n", name);
         msgpk_build_map_string_string(ctx, "name", 4, name, strlen(name));
 
         ////city
@@ -131,7 +132,7 @@ int main(){
     spx_block_skp_config_pool_init();
     spx_block_skp_config_task_pool_init();
     //thread_pool_init(spx_block_skp_count_config_index());
-    thread_pool_init(20);
+    thread_pool_init(1);
 
     //------------------------------------------------
     clock_t start;
