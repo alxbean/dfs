@@ -19,7 +19,7 @@ static int top = 0;//Mutex
  */
 static void msgpk_build_push_stack(struct msgpk_object *obj);
 static struct msgpk_object * msgpk_build_pop_stack();
-static struct msgpk_object * msgpk_build_node_string(string_t str, size_t len, struct msgpk_object *obj, bool_t isKey);
+static struct msgpk_object * msgpk_build_node_string(char* str, size_t len, struct msgpk_object *obj, bool_t isKey);
 static struct msgpk_object * msgpk_build_node_char(char d, struct msgpk_object *obj, bool_t isKey);
 static struct msgpk_object * msgpk_build_node_short(short d, struct msgpk_object *obj, bool_t isKey);
 static struct msgpk_object * msgpk_build_node_int(int d, struct msgpk_object *obj, bool_t isKey);
@@ -155,14 +155,14 @@ static struct msgpk_object * msgpk_build_pop_stack(){/*{{{*/
 }/*}}}*/
 
 //PackNode
-static struct msgpk_object * msgpk_build_node_string(string_t str, size_t len, struct msgpk_object *obj, bool_t isKey){/*{{{*/
+static struct msgpk_object * msgpk_build_node_string(char* str, size_t len, struct msgpk_object *obj, bool_t isKey){/*{{{*/
     if( NULL == obj){
         return NULL;
     }
     
     if (false == isKey){
         obj->obj_type = OBJ_TYPE_STR; 
-        obj->value.str_val = (string_t) calloc(1, sizeof(char)*(len + 1)); // + 1 for '\0'
+        obj->value.str_val = (char*) calloc(1, sizeof(char)*(len + 1)); // + 1 for '\0'
         obj->obj_len = len;
         memcpy(obj->value.str_val, str, len);
         *(obj->value.str_val + len) = '\0';
@@ -170,7 +170,7 @@ static struct msgpk_object * msgpk_build_node_string(string_t str, size_t len, s
         obj->isKey = isKey;
         obj->key_type = OBJ_TYPE_STR;
         obj->key_len = len;
-        obj->key.str_val = (string_t) calloc(1, sizeof(char)*(len + 1));
+        obj->key.str_val = (char*) calloc(1, sizeof(char)*(len + 1));
         memcpy(obj->key.str_val, str, len);
         *(obj->key.str_val + len) = '\0';
     }
@@ -588,7 +588,7 @@ static struct msgpk_object * msgpk_build_node_bin(ubyte_t * b, size_t len, struc
 
 
 //PackTree
-void msgpk_build_tree_string(struct tree_context *ctx, string_t str, size_t len){/*{{{*/
+void msgpk_build_tree_string(struct tree_context *ctx, char* str, size_t len){/*{{{*/
     struct msgpk_object *obj = new_msgpk_object();
     if ( NULL == obj )
         return;
@@ -897,7 +897,7 @@ void msgpk_build_tree_map_end(struct tree_context *ctx, int len){/*{{{*/
 }/*}}}*/
 
 //PackMap
-void msgpk_build_map_string_int(struct tree_context *ctx, string_t k, size_t len,  int v){/*{{{*/
+void msgpk_build_map_string_int(struct tree_context *ctx, char* k, size_t len,  int v){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -915,7 +915,7 @@ void msgpk_build_map_string_int(struct tree_context *ctx, string_t k, size_t len
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_string_long(struct tree_context *ctx, string_t k, size_t len,  long v){/*{{{*/
+void msgpk_build_map_string_long(struct tree_context *ctx, char* k, size_t len,  long v){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -933,7 +933,7 @@ void msgpk_build_map_string_long(struct tree_context *ctx, string_t k, size_t le
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_string_longlong(struct tree_context *ctx, string_t k, size_t len,  long long v){/*{{{*/
+void msgpk_build_map_string_longlong(struct tree_context *ctx, char* k, size_t len,  long long v){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -951,7 +951,7 @@ void msgpk_build_map_string_longlong(struct tree_context *ctx, string_t k, size_
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_string_float(struct tree_context *ctx, string_t k, size_t len,  float v){/*{{{*/
+void msgpk_build_map_string_float(struct tree_context *ctx, char* k, size_t len,  float v){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -969,7 +969,7 @@ void msgpk_build_map_string_float(struct tree_context *ctx, string_t k, size_t l
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_string_double(struct tree_context *ctx, string_t k, size_t len, double v){/*{{{*/
+void msgpk_build_map_string_double(struct tree_context *ctx, char* k, size_t len, double v){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -987,7 +987,7 @@ void msgpk_build_map_string_double(struct tree_context *ctx, string_t k, size_t 
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_string_string(struct tree_context *ctx, string_t k, size_t len,  string_t v, size_t vlen){/*{{{*/
+void msgpk_build_map_string_string(struct tree_context *ctx, char* k, size_t len,  char* v, size_t vlen){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -1005,7 +1005,7 @@ void msgpk_build_map_string_string(struct tree_context *ctx, string_t k, size_t 
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_string_bin(struct tree_context *ctx, string_t k, size_t len, ubyte_t *v, size_t vlen){/*{{{*/
+void msgpk_build_map_string_bin(struct tree_context *ctx, char* k, size_t len, ubyte_t *v, size_t vlen){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;
@@ -1114,7 +1114,7 @@ void msgpk_build_map_int_double(struct tree_context *ctx, int k, double v){/*{{{
     ctx->node = obj;
 }/*}}}*/
 
-void msgpk_build_map_int_string(struct tree_context *ctx, int k, string_t v, size_t vlen){/*{{{*/
+void msgpk_build_map_int_string(struct tree_context *ctx, int k, char* v, size_t vlen){/*{{{*/
     struct msgpk_object * obj = new_msgpk_object();
     if( NULL == obj){
         return;

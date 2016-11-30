@@ -455,7 +455,7 @@ static void msgpk_unpack_string(struct context *ctx){/*{{{*/
     ubyte_t *index = ctx->buf + ctx->off;
     int *off = &ctx->off;
     ubyte_t head = *index & 0xFF;
-    string_t str = NULL;
+    char* str = NULL;
     int len = 0;
 
     if ((head & 0xE0) == 0xA0){

@@ -25,7 +25,7 @@ extern "C" {
     void msgpk_build_free(struct tree_context * ctx);
 
     //PackTree
-    void msgpk_build_tree_string(struct tree_context *ctx, string_t str, size_t len);
+    void msgpk_build_tree_string(struct tree_context *ctx, char* str, size_t len);
     void msgpk_build_tree_char(struct tree_context *ctx, char d);
     void msgpk_build_tree_short(struct tree_context *ctx, short d);
     void msgpk_build_tree_int(struct tree_context *ctx, int d);
@@ -48,19 +48,19 @@ extern "C" {
     void msgpk_build_tree_map_end(struct tree_context *ctx, int len);
 
     //PackMap
-    void msgpk_build_map_string_int(struct tree_context *ctx, string_t k, size_t len,  int v);
-    void msgpk_build_map_string_long(struct tree_context *ctx, string_t k, size_t len,  long v);
-    void msgpk_build_map_string_longlong(struct tree_context *ctx, string_t k, size_t len,  long long v);
-    void msgpk_build_map_string_float(struct tree_context *ctx, string_t k, size_t len,  float v);
-    void msgpk_build_map_string_double(struct tree_context *ctx, string_t k, size_t len, double v);
-    void msgpk_build_map_string_string(struct tree_context *ctx, string_t k, size_t len,  string_t v, size_t vlen);
-    void msgpk_build_map_string_bin(struct tree_context *ctx, string_t k, size_t len, ubyte_t *v, size_t vlen);
+    void msgpk_build_map_string_int(struct tree_context *ctx, char* k, size_t len,  int v);
+    void msgpk_build_map_string_long(struct tree_context *ctx, char* k, size_t len,  long v);
+    void msgpk_build_map_string_longlong(struct tree_context *ctx, char* k, size_t len,  long long v);
+    void msgpk_build_map_string_float(struct tree_context *ctx, char* k, size_t len,  float v);
+    void msgpk_build_map_string_double(struct tree_context *ctx, char* k, size_t len, double v);
+    void msgpk_build_map_string_string(struct tree_context *ctx, char* k, size_t len,  char* v, size_t vlen);
+    void msgpk_build_map_string_bin(struct tree_context *ctx, char* k, size_t len, ubyte_t *v, size_t vlen);
     void msgpk_build_map_int_int(struct tree_context *ctx, int k, int v);
     void msgpk_build_map_int_long(struct tree_context *ctx, int k, long v);
     void msgpk_build_map_int_longlong(struct tree_context *ctx, int k, long long v);
     void msgpk_build_map_int_float(struct tree_context *ctx, int k, float v);
     void msgpk_build_map_int_double(struct tree_context *ctx, int k, double v);
-    void msgpk_build_map_int_string(struct tree_context *ctx, int k, string_t v, size_t vlen);
+    void msgpk_build_map_int_string(struct tree_context *ctx, int k, char* v, size_t vlen);
     void msgpk_build_map_int_bin(struct tree_context *ctx, int k, ubyte_t *v, size_t vlen);
 
     //Query Tree
