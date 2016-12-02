@@ -18,6 +18,8 @@
 
 #define ThreadCount 1
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+clock_t start;
+clock_t end;
 
 static int rand_int(int base){
     int val = rand() % base;
@@ -109,11 +111,19 @@ void insert_test(void* q){
         //printf("age:%d\n", obj->value.int32_val);
         
         pthread_mutex_lock(&mutex);
-        logdb_debug("thread:%ld ======================================>%d\n", pthread_self(), total++);
+        if (total % 10000 == 0){
+            end = clock();
+            printf("thread:%ld ======================================>%d\n", pthread_self(), total);
+            start = clock();
+            double cost = (double)(end - start)/CLOCKS_PER_SEC;
+            printf("cost time: %dms \n", (int)(cost * 1000));
+        }
+        total++;
         char* unid = msgpk_tree_add(ctx->root, strlen(request), (char*)request);
         pthread_mutex_unlock(&mutex);
         free(unid);
         msgpk_build_free(ctx);
+        free(name);
     }
 }
 
@@ -135,8 +145,6 @@ int main(){
     thread_pool_init(1);
 
     //------------------------------------------------
-    clock_t start;
-    clock_t end;
     pthread_t tid[ThreadCount];
 
     int count = 5000000;
@@ -154,13 +162,6 @@ int main(){
 
     for(i = 0; i < ThreadCount; i++)
         pthread_join(tid[i], NULL);
-
-    end = clock();
-
-    double cost = (double)(end - start)/CLOCKS_PER_SEC;
-    //pthread_join(block_tid, NULL);
-    //printf("======================================\n");
-    //printf("add %d cost time: %dms \n", count, (int)(cost * 1000));
     
     return 0;
 }

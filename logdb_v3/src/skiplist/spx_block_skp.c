@@ -380,12 +380,11 @@ pthread_t spx_block_skp_thread_new(SpxLogDelegate *log, err_t *err){/*{{{*/
 }/*}}}*/
 
 static void spx_block_skp_handler(void *arg){/*{{{*/
+    struct spx_block_skp_index* idx_lst = spx_block_skp_config_load_index();
     while (1) {
-        struct spx_block_skp_index* idx_lst = spx_block_skp_config_load_index();
         struct spx_block_skp_index* tmp_idx = idx_lst->next_idx;
         while (tmp_idx != NULL) {
             struct logdb_queue* task_queue = spx_block_skp_config_task_queue_dispatcher(tmp_idx->idx);
-            //printf("revolver queue:%s ===> size:%zd\n", task_queue->name, task_queue->size);
             struct spx_block_skp_task* task = logdb_queue_pop(task_queue);
             if (task != NULL)
                 pool_task_add(spx_block_skp_insert_task, task);

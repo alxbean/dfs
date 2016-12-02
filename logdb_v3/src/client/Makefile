@@ -13,7 +13,7 @@ TARGET_PATH = /usr/local/bin
 HEADER_TARGET_PATH = /usr/local/include/
 
 CC = gcc
-CFLAG = -pipe -o0  -W -Wall -Werror -g \
+CFLAG = -DDEBUG -pipe -o0  -W -Wall -Werror -g \
  		-Wpointer-arith -Wno-unused-parameter -Wno-unused-function -Wno-unused-variable -Wunused-value 
 INC_PATH = -I/usr/local/include \
 			-I$(SPX_HEADER_PATH) \

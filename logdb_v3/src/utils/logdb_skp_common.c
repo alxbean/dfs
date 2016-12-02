@@ -30,7 +30,8 @@ int cmp_double(const void *a, const void *b){/*{{{*/
 }/*}}}*/
 
 int cmp_str(const void *a, const void *b){/*{{{*/
-    return strcmp((char *)a, (char *)b);
+    int len = strlen(a);
+    return strncmp((const char *)a, (const char *)b, len);
 }/*}}}*/
 
 
