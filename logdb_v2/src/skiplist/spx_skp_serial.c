@@ -10,7 +10,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define SpxSkpSerialMaxLogSize 16777216//the max size of data file  16M
+#define SpxSkpSerialMaxLogSize 134217728//the max size of data file  16M
 #define SpxSkpSerialBaseSize 20//count(long) + offset(long) + version(int)
 #define SpxSkpSerialHeadSize 8388608//8M
 #define SpxSkpSerialItemSize 13 //Head Item size: spx_skp_serial_index_typeype(char) + block_used_len(int) + valueItemOffset(long)
@@ -36,6 +36,8 @@ typedef enum {
 } spx_skp_serial_index_type;
 
 static int g_file_count = 0; //single thread safe 
+static char g_file[100];
+static FILE *g_fp;
 
 //declare
 static int64_t spx_skp_serial_get_file_size(const char * file);
@@ -45,7 +47,7 @@ static ubyte_t *spx_skp_serial_get_header(char *name, char *path);
 static ubyte_t *spx_skp_serial_get_item(ubyte_t *header, int64_t index);
 static struct spx_skp_serial_map_stat *spx_skp_serial_map(const char * file, int64_t size, int64_t offset);
 static int spx_skp_serial_un_map(struct spx_skp_serial_map_stat * mst);
-static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, const ubyte_t *data, size_t len);
+static struct spx_skp_serial_metadata *spx_skp_serial_write_data(FILE *fp, char* file, const ubyte_t *data, size_t len);
 static int spx_skp_serial_which_file(char *file);
 static ubyte_t *spx_skp_serial_m2b(struct spx_skp_serial_metadata *md, int *byteLen);
 static struct spx_skp_serial_metadata *spx_skp_serial_b2m(ubyte_t *b);
@@ -390,26 +392,11 @@ int spx_skp_serial_metadata_list_free(struct spx_skp_serial_metadata_list * md_l
     return 0;
 }/*}}}*/
 
-static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, const ubyte_t *data, size_t len){/*{{{*/
-    int fd;
-    char path[SpxSkpSerialFileNameSize];
-    char path1[SpxSkpSerialFileNameSize];
-    getcwd(path, sizeof(path));
-    snprintf(path1, sizeof(path1), "%s/skiplist/data/%s", path, file);
-                                                                                                            
-    printf("open file: %s\n", path1);
-    FILE *fp = fopen(path1, "a+"); 
-    if (NULL == fp){
-        printf("opening file:%s\n", path1);
-        perror("fp is NULL");
-        return NULL;
-    }
-
-
-    printf("writing data...\n");
+static struct spx_skp_serial_metadata *spx_skp_serial_write_data(FILE *fp, char *file, const ubyte_t *data, size_t len){/*{{{*/
+    //printf("writing data...\n");
     fwrite(data, sizeof(char), len, fp);
     //fflush(fp);
-    printf("writing data done\n");
+    //printf("writing data done\n");
 
     struct spx_skp_serial_metadata *md = (struct spx_skp_serial_metadata*) malloc(sizeof(struct spx_skp_serial_metadata));
     int file_len = strlen(file);
@@ -418,8 +405,6 @@ static struct spx_skp_serial_metadata *spx_skp_serial_write_data(char *file, con
     md->len = len;
     md->off = ftell(fp) - len;
 
-    fclose(fp);
-    
     return md;
 }/*}}}*/
 
@@ -478,31 +463,48 @@ static struct spx_skp_serial_metadata *spx_skp_serial_b2m(ubyte_t *b){/*{{{*/
     return md;
 }/*}}}*/
 
-ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len){/*{{{*/
-    char file[SpxSkpSerialFileNameSize] = {0};// yyyy/mm/dd\n
-    if (spx_skp_serial_which_file(file) != 0){
-        printf("locate file to write failed\n");
-        return NULL;
-    }
-    struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(file, data, len);
-    if(NULL == md){
-        printf("write data error\n");
-        return NULL;
-    }
-    ubyte_t *buf = spx_skp_serial_m2b(md, NULL);
-
-    spx_skp_serial_md_free(md);
-    return buf;
-}/*}}}*/
+//ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len){/*{{{*/
+//    char file[SpxSkpSerialFileNameSize] = {0};// yyyy/mm/dd\n
+//    if (spx_skp_serial_which_file(file) != 0){
+//        printf("locate file to write failed\n");
+//        return NULL;
+//    }
+//    struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(file, data, len);
+//    if(NULL == md){
+//        printf("write data error\n");
+//        return NULL;
+//    }
+//    ubyte_t *buf = spx_skp_serial_m2b(md, NULL);
+//
+//    spx_skp_serial_md_free(md);
+//    return buf;
+//}/*}}}*/
 
 struct spx_skp_serial_metadata* spx_skp_serial_data_writer2md(const ubyte_t *data, size_t len){/*{{{*/
-    char file[SpxSkpSerialFileNameSize] = {0};// yyyy/mm/dd\n
-    if (spx_skp_serial_which_file(file) != 0){
-        printf("locate file to write failed\n");
-        return NULL;
+    char file[SpxSkpSerialFileNameSize] = {"test.log"};// yyyy/mm/dd\n
+    //if (spx_skp_serial_which_file(file) != 0){
+    //    printf("locate file to write failed\n");
+    //    return NULL;
+    //}
+
+    if (strcmp(file, g_file)){
+        strncpy(g_file, file, strlen(file));
+        char path[SpxSkpSerialFileNameSize];
+        char path1[SpxSkpSerialFileNameSize];
+        getcwd(path, sizeof(path));
+        snprintf(path1, sizeof(path1), "%s/skiplist/data/%s", path, g_file);
+        //printf("open file: %s\n", path1);
+        if (g_fp != NULL)
+            fclose(g_fp);
+        g_fp = fopen(path1, "a+"); 
+        if (NULL == g_fp){
+            printf("opening file:%s\n", path1);
+            perror("fp is NULL");
+            return NULL;
+        }
     }
 
-    struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(file, data, len);
+    struct spx_skp_serial_metadata *md = spx_skp_serial_write_data(g_fp, g_file, data, len);
     if(NULL == md){
         printf("write data error\n");
         return NULL;
@@ -1214,7 +1216,6 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
             } else {
                 split_flag = 2;
             }
-
         }
 
         if (-1 == spx_block_skp_node_byte_move(tmp_block_mst->mapped, off, off + item_len, tmp_index_len - off)){
@@ -1225,7 +1226,7 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
             goto r1;
         }
 
-        ubyte_t * insert_ptr = tmp_block_mst->mapped + off;
+        ubyte_t* insert_ptr = tmp_block_mst->mapped + off;
         spx_msg_i2b(insert_ptr, key_len);
         memcpy(insert_ptr + 4, key_byte, key_len); 
 
@@ -1238,7 +1239,7 @@ int64_t spx_block_skp_node_serial(struct spx_block_skp *block_skp, void *key, vo
             if (0 == off){
                 int old_left_off = 0;
                 int old_left_key_len = spx_msg_b2i(block_mst->mapped + old_left_off);
-                void * old_left_key = byte2key(block_mst->mapped + old_left_off + 4, old_left_key_len);
+                void* old_left_key = byte2key(block_mst->mapped + old_left_off + 4, old_left_key_len);
                 if (true == is_header)
                     serial_ctx->new_left_key = old_left_key;      
                 else

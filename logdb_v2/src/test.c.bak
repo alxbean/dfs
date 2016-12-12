@@ -1,0 +1,19 @@
+/*************************************************************************
+    > File Name: test.c
+    > Author: shuaixiang
+    > Mail: shuaixiang@yuewen.com
+    > Created Time: Mon 31 Oct 2016 06:00:55 PM CST
+************************************************************************/
+
+#include <string.h>
+#include "spx_skp_serial.h"
+#include "spx_types.h"
+
+int main(){
+    char *request = {"111111111111111111111111111111111111111111111111111"};
+
+    while (1){
+        spx_skp_serial_data_writer2md((const ubyte_t*)request, strlen(request));
+    }
+}
+

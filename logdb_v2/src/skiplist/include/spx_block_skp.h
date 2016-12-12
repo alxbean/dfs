@@ -60,6 +60,7 @@ extern "C" {
     struct spx_skp_queue{
         struct spx_skp_queue_node *head;
         struct spx_skp_queue_node *tail;
+        size_t size;
     } g_spx_skp_queue;
 
     //spx_skp_queue

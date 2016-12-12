@@ -139,14 +139,17 @@ static int spx_skp_queue_push(struct spx_skp *skp){/*{{{*/
     }
 
     struct spx_skp_queue_node *new_node = spx_skp_queue_node_new(skp);
+    printf("push size: %zd", skp_queue->size);
 
     spx_skp_queue_lock();
     if (NULL == skp_queue->tail){
         skp_queue->head = new_node;
         skp_queue->tail = new_node;
+        skp_queue->size = 1;
     } else {
         skp_queue->tail->next_queue_node = new_node;
         skp_queue->tail = new_node;
+        skp_queue->size++;
     }
 
     spx_skp_queue_unlock();
@@ -167,6 +170,7 @@ static struct spx_skp *spx_skp_queue_pop(){/*{{{*/
     if (NULL == skp_queue->head){
         printf("skp_queue is empty\n");
     } else {
+        printf("pop size: %zd", skp_queue->size);
         skp = skp_queue->head->skp;
         if (NULL == skp){
             printf("pop skp is NULL, if this msg print, HAHA, not possible, go and check skp_queue\n");
@@ -176,6 +180,7 @@ static struct spx_skp *spx_skp_queue_pop(){/*{{{*/
         spx_skp_queue_lock();
         struct spx_skp_queue_node *head2free = skp_queue->head;
         skp_queue->head = skp_queue->head->next_queue_node;
+        skp_queue->size--;
         if (NULL == skp_queue->head)
             skp_queue->tail = NULL;
         spx_skp_queue_unlock();
@@ -850,17 +855,22 @@ static void spx_block_skp_queue_periodic_check_cb(struct ev_loop *loop, ev_perio
 }/*}}}*/
 
 static void spx_block_skp_handler(void *arg){/*{{{*/
-    SpxLogDelegate *log = (SpxLogDelegate *) arg;
-    g_skp_block_loop = EV_DEFAULT;
-    if (NULL == g_skp_block_loop){
-        SpxLog1(log, SpxLogError, "ev_loop_new failed");
-        return;
+    while (1){
+        struct spx_skp *skp = spx_skp_queue_pop();
+        if (skp != NULL)
+            pool_task_add(spx_block_skp_event_insert, skp);
     }
+    //SpxLogDelegate *log = (SpxLogDelegate *) arg;
+    //g_skp_block_loop = EV_DEFAULT;
+    //if (NULL == g_skp_block_loop){
+    //    SpxLog1(log, SpxLogError, "ev_loop_new failed");
+    //    return;
+    //}
 
-    ev_periodic periodic_watcher;
-    ev_periodic_init(&periodic_watcher, spx_block_skp_queue_periodic_check_cb, 0., 3.0, 0);
-    ev_periodic_start(g_skp_block_loop, &periodic_watcher);
-    ev_run(g_skp_block_loop, 0);
+    //ev_periodic periodic_watcher;
+    //ev_periodic_init(&periodic_watcher, spx_block_skp_queue_periodic_check_cb, 0., 3.0, 0);
+    //ev_periodic_start(g_skp_block_loop, &periodic_watcher);
+    //ev_run(g_skp_block_loop, 0);
 }/*}}}*/
 
 static void spx_block_skp_event_insert(void *arg){/*{{{*/

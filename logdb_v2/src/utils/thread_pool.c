@@ -73,6 +73,7 @@ int pool_task_add(void (*process) (void *arg), void *arg){/*{{{*/
     assert(g_thread_pool->task_queue_head != NULL);
     g_thread_pool->cur_queue_size++;
     pthread_mutex_unlock(&(g_thread_pool->task_queue_lock));
+    printf("add task success, task queue size: %d\n", g_thread_pool->cur_queue_size);
 
     pthread_cond_signal(&(g_thread_pool->task_queue_ready));
 
@@ -133,6 +134,7 @@ static void *thread_routine(void *arg){/*{{{*/
         (*(task->process))(task->arg);
         free(task);
         task = NULL;
+        printf("execute task success, task queue size: %d\n", g_thread_pool->cur_queue_size);
     }
 }/*}}}*/
 

@@ -79,7 +79,7 @@ extern "C" {
     struct spx_skp_serial_metadata_list * spx_skp_serial_metadata_list_new();
     int spx_skp_serial_metadata_list_insert(struct spx_skp_serial_metadata_list * md_lst, struct spx_skp_serial_metadata *md);
     int spx_skp_serial_metadata_list_free(struct spx_skp_serial_metadata_list * md_lst, bool_t is_free_md);
-    ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len);
+    //ubyte_t * spx_skp_serial_data_writer2byte(const ubyte_t *data, size_t len);
     struct spx_skp_serial_metadata* spx_skp_serial_data_writer2md(const ubyte_t *data, size_t len);
     ubyte_t * spx_skp_serial_data_reader(struct spx_skp_serial_metadata *md);
     void spx_skp_serial_md_free(struct spx_skp_serial_metadata *md);
