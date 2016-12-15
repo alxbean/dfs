@@ -428,7 +428,7 @@ static void msgpk_unpack_bin(struct context *ctx){/*{{{*/
             bin = (ubyte_t *) malloc(sizeof(ubyte_t)*len);
             memcpy(bin, (index + 2), len);
             ctx->node->value.bin_val = bin;
-            *off += (len + 1);
+            *off += (len + 2);
             break;
         case 0xC5:
             len = (*(index+1)<<8) | *(index+2);

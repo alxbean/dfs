@@ -107,7 +107,7 @@ struct spx_skp_serial_split_meta{
     ubyte_t* value_snapchat;
 };
 
-static struct spx_skp_serial_pool_block{
+struct spx_skp_serial_pool_block{
     int64_t idx;
     struct spx_skp_serial_map_stat* mst;
 };
